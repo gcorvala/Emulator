@@ -14,4 +14,7 @@ typedef struct {
   int four_screen : 1;
 } RomNES;
 
+RomNES * rom_nes_new (const char *filename);
+void     rom_nes_free (RomNES *rom);
+
 #endif

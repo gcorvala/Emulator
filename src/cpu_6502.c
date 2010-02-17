@@ -20,7 +20,7 @@ cpu_6502_load_rom (CPU6502 *cpu, RomNES *rom) {
 
 void
 cpu_6502_step (CPU6502 *cpu) {
-  printf ("\tcpu_6502_step : [opcode] %x\n", *(cpu->SP));
+  printf ("\tcpu_6502_step : [opcode] %02x\n", *(cpu->SP) & 0xff);
   switch (*(cpu->SP) & 0xff) {
     case OP_6502_LDX_I:
       cpu->X = *(cpu->SP++) & 0xff;
