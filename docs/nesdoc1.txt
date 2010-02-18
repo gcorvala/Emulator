@@ -1,0 +1,1106 @@
+v0.9			   ASSEMBLEUR SUR NES
+				CRISPYSIX
+
+Lorsque j'ai commencé à m'interesser à la NES, j'ai constitué une sorte de journal
+de bord avec de nombreuses notes. Au fur et à mesure de ces notes d'abord réparties
+anarchiquement, il m'est venu l'idée d'en faire une sorte de compilation qui
+pourrait aisément être réutilisé par d'autres personnes. Ainsi est née cette documentation.
+
+Je n'ai pas la prétention de vous apprendre à devenir des as en la matière 
+mais vu le peu de documents disponibles (en français du moins c'est le néant), je pense
+que ce genre de choses sera loin d'être inutile pour ceux qui s'intéressent
+encore à cette vieille machine. Attention la mise en page de cette doc est
+chaotique mais a force on risque de s'y habituer...
+
+
+Si vous avez choisi de commencer à vouloir créer vous même vos programmes en
+assembleur en prenant la NES, je ne peux qu'approuver ce choix, même s'il ne s'agit pas
+à mon avis d'une des machines les plus simples à comprendre et à programmer, c'est
+une des mieux documentées, grâce à l'acharnement de quelques passionnés.
+En plus comme beaucoup de personnes semblent aussi attirées par la Supernes ça ne
+peut qu'être utile (famille de processeur,ect...), je trouve ça bien trop
+compliqué pour l'instant faire quelque chose de concret au niveau des coprocesseurs.
+
+ASM HACKING -> Attention! Sur NES il est beaucoup plus délicat que sur SUPERNES,
+au niveau de l'adressage, et en lisant cette doc vous devriez comprendre pourquoi.
+
+Note: Les adresses sont données en hexa avec un $ devant, les valeurs immédiates avec un #.
+Bon il est possible que je fasse des petits ecarts involontaires mais dans l'ensemble c'est ça.
+
+
+J'ai choisie de découper cette documentation en 2 parties bien distinctes.
+Les points suivants seront abordés:
+
+Dans le premier fichier:
+
+- Brève presentation de la NES.
+	1. -> Caractéristiques fondamentales
+	2. -> Vues générales sur la mémoire centrale
+
+- Fonctionnnement du processeur 6502.
+	1. -> Généralitées sur l'architecture et présentation des registres du processeur
+	2. -> Généralitées sur les modes d'adressages utilisées par le 6502
+	3. -> Instructions détaillées avec leur fonctionnement
+	4. -> Tableau détaillé des opcodes par ordre alphabetique
+	5. -> Interruptions
+
+Dans le second fichier:
+
+- Fonctionnement de la PPU (Picture Processing Unit).
+	1. -> Partage de la VRAM
+	2. -> Tables des graphismes
+	3. -> Tables de nommage
+	4. -> Tables d'attribution
+	5. -> Fonctionnement des palettes
+	6. -> Fonctionnement des miroirs
+	7. -> Scrolling de l'arrière plan
+	8. -> Fonctionnement des sprites
+	9. -> VBlank et HBlank
+
+- Fonctionnement des autres peripheriques.
+	1. -> Pseudo-Audio Processing Unit
+	2. -> Ports Joypads
+
+- Détails sur les registres de periphériques.
+	1. -> Registres PPU
+	2. -> Registres pAPU
+	3. -> Registres Joypads
+
+- Autres choses utiles.
+	1. -> Structure iNes
+	2. -> Multi-Memory Controler
+
+- Détails sur les méthodes d'assemblage.
+
+- Epilogue.
+
+
+Brève présentation de la NES:
+----------------------------
+
+Bon je vais pas refaire l'histoire de cette console ça n'a aucune importance ici.
+Juste ce qui est nécessaire donc. La Famicom (nom japonais de la NES) est sortie en
+1983 au Japon, fut immediatement un gros succès, sa commercialisation suivi alors
+sous le nom de Nintendo Entertainment System logiquement aux Etats-Unis puis en Europe.
+
+	1. Caractéristiques fondamentales:
+
+La NES est architécturée autour d'un processeur 8 bits, le 2A03, variante du 6502. 
+Ce dernier est très en vogue dans les années 80 et équipe de nombreux micro-ordinateurs,
+comme le C64. Egalement autre composant capital, le PPU pour l'affichage.
+Si vous ouvrez une NES vous les apercevrez facilement puisque ce sont les 2 plus
+gros composants de la carte mère.
+
+	Détails techniques:
+2 composants principaux:
+
+-Processeur central: 		2A03 NMOS fabriqué par RICOH cadencé à 1,7897725 Mhz pour 
+				la version NTSC et 1,773447 Mhz pour la version PAL (détaillé après).
+				Le processeur est cablé à 2 ko de RAM.
+-Picture Processing Unit:	Unité chargée de l'affichage des sprites et des arrières plan. Son utilisation
+				particulière sera détaillée plus tard. Elle dispose de 16 ko de VRAM et 
+				256 octets pour les sprites.
+	Autre:
+-Capacitées sonores:		La NES dispose de 5 voix sonores, 2 canaux de synthèses FM, un canal triangle
+				un canal de bruit, et un canal DMC (Delta Modulation Channel).
+				Le son est pris en charge par le processeur central.
+
+	2. Vues générales sur la mémoire:
+
+Toute la memoire de la NES est représentée sur une seule et même plage mémoire,
+mais leur utilisation est bien différente...
+En fait c'est assez simple à introduire et une fois que l'on à compris il n'est pas
+nécessaire de revenir là-dessus. Voilà comment cela marche:
+-de $0 à $7FF: Il s'agit de la RAM qui va servir pour le stockage des données (2 ko).
+-de $800 à $1FFF: Miroirs de la RAM tous les #800 octets.
+-de $2000 à $2007: Registres de la PPU
+-de $2008 à $3FFF: Autres registres (miroirs des registres de la PPU tous les 8 octets)
+-de $4000 à $4016: Registres de la pAPU et des manettes
+-de $4017 à $4FFF: N/A
+-de $5000 à $5FFF: Expansion
+-de $6000 à $7FFF: Mémoire SRAM pour les sauvegardes
+-de $8000 à $BFFF: PRG-ROM (code contenu dans la ROM) d'une taille de $4000 (16384)
+-de $C000 à $FFFF: PRG-ROM d'une taille de $4000 (16384)
+
+L'utilisation de la VRAM est entièrement gérée par la PPU, inutile donc de l'aborder ici.
+Les deux plages servant à lire du code instruction (PRG-ROM) ne sont pas forcement utilisables
+linéairement.
+Pour les données statiques graphiques (stockage du graphisme et des sprites) on utilise plus
+souvent la CHR-ROM, dont le fonctionnement sera détaillé plus tard avec la PPU.
+Pour le miroir de la mémoire centrale, voyez cela comme un alias:
+écrire un octet l'adresse $0 l'écrit aussi à l'adresse $800, $1000 et $1800.
+Remarque: grâce au MMC on peut faire varier considérablement la taille et la structure des données,
+cependant la PRG-ROM restera de toute facon statique (son emplacement est fixé et définitif).
+
+
+Fonctionnement du processeur 6502:
+---------------------------------
+	
+Donc le processeur 6502 est dit 8 bits car ses registres de travail sont limités à une taille de 8 bits,
+ce qui induit qu'il sera impossible de manipuler des valeur ayant une taille superieure à 8 bits.
+Ca peut sembler très limitant au premier abord, mais en réalité...ça l'est réellement. 
+Cela va vraiment devenir un handicap dans le codage d'algorithmes de compression ou autre.
+Cependant (et fort heureusement) le compteur ordinal (Program Counter) est lui en 16 bits. Celà limite
+tout de même l'adressage à 64 ko mais pour pouvoir accéder à plus de mémoire on a recours au 
+MMC (Multi-Memory Controller), qui sera abordé plus tard. Les opérandes seront donc de 8 bits.
+
+	1. Généralitées sur l'architecture et présentation des registres du processeur:
+
+Le processeur 6502 est donc l'unique interface entre l'utilisateur et la machine. Il dispose d'un
+jeu d'instructions capable de manipuler des données sur une zone d'adresse de 64 ko et 
+de 6 registres, 5 8-bits et un de 16 bits.
+
+Program Counter (compteur ordinal): C'est un registre 16 bits qui peut adresser toute la mémoire
+disponible sur une plage de $0 à $FFFF.
+Par defaut, il contient l'adresse de la prochaine instruction à
+executer. En outre chaque instruction ne va pas agir de la même facon.
+L'instruction LDA #$12 par exemple incrementera le compteur ordinal de 2.
+Il est directement adréssé par des instructions nécessitant des adresses (STA,LDA,JSR,...).
+En outre le compteur ordinal change à chaque instruction.
+
+Stack Register (pointeur de pile): Registre de 8 bits pointant sur le haut de la pile.
+Normalement vous n'avez pas à vous en soucier. L'utilisation de la pile est quelque chose de très
+pratique, comparable à une pile d'assiettes. Utiliser le plus souvent avec les instructions PHA (PUSH) 
+et PLA (POP), la pile permet de maitriser aisément les retours de fonctions par exemple.
+En revanche attention car l'instruction JSR utilise la pile pour mémoriser l'adresse de retour.
+Pour info, la pile est en fait la zone mémoire s'étendant dans la ram de $100 à $1FF.
+A vous de faire attention de ne pas depasser sa capacité.
+Note: il est parfois nécessaire d'initialiser la pile à $FF (Registre pointeur de pile).
+
+Processor Status (registre d'etat): Registre 8 bits qui a une importance capitale puisque qu'il
+change en fonction du résultat des instructions, il va donc permettre d'implementer toutes les
+structures conditionnelles, indispensables dans un programme. Pour comprendre son fonctionnement,
+il faut voir chaque bits du registre d'etat comme une variable booléenne, qui peut prendre 2 valeurs
+vrai ou faux. Voici comment il fonctionne:
+
+	C - Bit 0, Carry Flag (Bit de retenu): comme son nom l'indique ce bit va permettre de mémoriser
+		si le résultat d'une opération est sujet à une retenue. Un exemple simple:
+		Imaginons que nous ajoutions 1 à 255, cela aura pour résultat 0 avec le bit de retenue à 1.
+		En outre d'autres instructions comme les instructions de rotation l'utilisent.
+
+	Z - Bit 1, Zero Flag (Bit d'etat Zero): Ce bit est mis à 1 lorsque le resultat d'une instruction
+		est 0.
+
+	I - Bit 2, Interrupt Disable Flag (Bit d'autorisation d'interruptions): Si ce bit est mis à 1 on bloque
+		les interruptions non masquables (NMI) venant des periphériques (détaillé en partie 5).
+
+	D - Bit 3, Decimal Mode (Mode décimal): Si il est mis à 1 indique que l'on est en mode décimal.
+		Pas très utile car limite le nombre de combinaisons pour un octet à 255 valeurs.
+		De plus sur la version du 6502 utilisé sur NES, il n'existe pas de mode décimal effectif!
+		Donc activer ou désactiver ce flag ne servira à rien.
+
+	B - Bit 4, Break Command (Bit de Break): Si une interruption est causée par l'instruction BRK,
+		ce bit est mis à 1, il est mis à 0 si il s'agit d'une interruption externe.
+
+	V - Bit 6, Overflow Flag (Bit de depassement signé): Ce bit permet de simuler la retenue pour
+		2 nombre pseudos signés. C'est a dire que l'on va prendre le calcul de 2 valeurs
+		sur 7 uniquement, le dernier servant au signe. Par exemple: 01111111+00000001=10000000
+		-> ce calcul ne modifiera pas le flag C mais modifiera le flag V.
+	
+	N - Bit 7, Negative Flag (Bit de negation): Ce flag est tres lié au second, il sert au calcul de valeurs
+		signées. En fait ce bit est mis a 1 si le resultat contenu dans l'accumulateur à son bit 7
+		mis à 1.
+
+Remarque: le bit #5 est inutilisé sur le 6502.
+
+	Le registre d'état peut etre représenté de la façon suivante:
+
+	+-----+-----+-----+-----+-----+-----+-----+-----+
+	|     |     |     |     |     |     |     |     |
+	|  N  |  V  |     |  B  |  D  |  I  |  Z  |  C  |
+	|     |     |     |     |     |     |     |     |
+	+-----+-----+-----+-----+-----+-----+-----+-----+
+
+Les registres de travail (utilisables directement par l'utilisateur):
+
+Accumulator (Accumulateur) A: Il s'agit du registre de travail principal, puisque qu'il va être utilisé
+par toutes les instructions utilisant l'unité arithmétique et logique du processeur. C'est à dire que
+tous les calculs passeront necessairement par lui.
+
+Registre X: Utilisé pour les adressages indexés et le controle des boucles principalement.
+
+Registre Y: Comparable au registre X mais dispose de moins d'instructions et donc de fonctionnalitées.
+
+	2. Généralitées sur les modes d'adressages utilisées par le 6502:
+
+Les modes d'adressages qui vont être présentés ne sont pas forcement tous utilisés par les instructions
+nécessitant une adresse. Il y en a 12 en tout sur le 6502.
+
+Voici de quoi il retourne:
+	
+	Adressage immédiat: S'utilise de la forme "#$??" où $?? est l'opérande l'hexa à charger par l'instruction.
+		Il s'agit du mode d'adressage le plus simple puisqu'on n'utilise pas le compteur ordinal.
+		Bien entendu il ne s'utilise qu'en lecture.
+
+	Adressage absolu: Dans ce mode on utilise le compteur ordinal, la syntaxe est la suivante: "LDA aaaa"
+		où aaaa contient l'adresse de l'operande à charger dans l'accumulateur.
+
+	Adressage page zero: Similaire au précédent mais là on utilise que 8 bits pour l'adresse, ce qui limite
+		l'adressage a la page mémoire 0 (cad de $0 à $FF), utile pour alléger le code.
+
+	Adressage indirect absolu: La seule instruction a l'utiliser est l'instruction JMP. Sa syntaxe est "($aaaa)".
+		En fait l'adresse aaaa contient l'adresse de l'opérande. Attention ne pas oublier que le 6502
+		fonctionne en mode Little Endian! Ainsi l'adresse pointe sur la seconde opérande de l'adresse, il faut
+		faire une permutation.
+
+	Adressage absolu indexé: On va utiliser les registres X et Y pour ce type d'adressage. La syntaxe est la suivante:
+		"$aaaa, ?" où aaaa est l'adresse et ? est un registre X ou Y. Par exemple "LDA $1285,X" et X contenant 5
+		donnera comme adresse $1285+$5=$128A.
+
+	Adressage indexé page zero: Similaire a l'exemple precedent sauf que l'adresse ne s'étend que 8 bits.
+
+	Adressage indexé indirect: La syntaxe de ce mode d'adressage est la suivante: "($aa,?)" où aa contient
+		l'adresse et ? le nom du registre (X ou Y) à ajouter a l'adresse pour obtenir l'adresse definitive
+		de l'opérande.
+
+	Adressage indirect indexé: La syntaxe ressemble à la precedente: "($aa),?" sauf que on va d'abord chercher l'adresse
+		trouvé en aa et ensuite on y ajoute la valeur du registre ? pour obtenir l'adresse finale l'opérande.
+
+	Adressage relatif: utilisé par les instructions de branchement (détaillées après). Il s'agit de considérer les
+		opérandes 8 bits passées a l'instruction comme des valeurs signées, cela va permettre d'effectuer
+		des branchements vers des instructions antérieures en mémoire. Il s'agit en fait d'incrémenter ou
+		décrementer le compteur ordinal avec l'opérande que l'on passe.
+		Exemple: 01111111=127
+			 10000000=-128
+
+	Adressage implié: l'adressage n'en est en fait pas vraiment un puisqu'il est transparent dans l'instruction,
+		qui ne nécessite pas de valeurs en paramètre (juste la taille de l'opcode).
+
+		+-------------------------------+---------------+
+		|Adressage immédiat		|#$??		|		
+		|Adressage absolu		|$????		|
+		|Adressage page zero		|$??		|
+		|Adressage indirect absolu	|($????)	|
+		|Adressage absolu indexé	|$????,X	|
+		|Adressage indexé page zero	|$??,X		|
+		|Adressage indexé indirect	|($??,X)	|
+		|Adressage indirect indexé	|($??),X	|
+		|Adressage relatif		|$??  ->signé	|
+		|Adressage implié		|		|
+		+-------------------------------+---------------+
+
+Remarque: on peut remplacer le registre X par le registre Y indifférament sauf pour certaines instructions.
+
+	3. Instructions détaillées avec leur fonctionnement:
+
+
+Le processeur 6502 compte 56 mnémonics differents (comprenez noms d'instructions). En outre pour chaque instruction vue
+certaines peuvent faire l'objet de plusieurs modes d'adressages differents. (leurs opcodes seront bien entendu différents).
+Les modes d'adressages possibles par instruction seront détaillés dans la partie Opcodes.
+Note: A=Accumulateur
+Parenthèse: le langage machine (comprenez celui qui utilise les instructions) n'est absolument pas le plus bas niveau du
+processeur. Lorsque l'on dit que le 6502 est cadencé à 1,773447 Mhz, ça signifie qu'il peut faire 1 million 773447 cycle
+d'horloge par seconde, hors selon les instructions le nombre de cycle d'horloge varie relativement beaucoup selon les
+instructions utilisées. Il existe des documentations sur le 6502 relativement complètes pour ce genre de choses.
+
+Voici les instructions disponibles dans l'ordre alphabetique:
+
+ADC - Add with Carry -
+Flags afféctés: N,Z,C,V
+Additionne A avec l'operande désignée par le mode d'adressage, ainsi que le bit de retenue 
+et place le resultat dans A. Selon les résultats les flags sont mis à jour. Si vous voulez effectuer
+une addition vierge il ne faut pas oublier de remettre à zero le bit de retenue (C).
+
+AND - Logical AND (ET Logique) -
+Flags afféctés: N,Z
+Effectue un ET logique entre A et l'opérande désignée par le mode d'adressage utilisé et place le
+résultat dans A. En fonction de A les bits de flags sont mis à jour. Utile pour masquer une valeur.
+Le ET logique fonctionne comme suit:
+	A: 		#10010111b
+	opérande: 	#11010010b
+			----------
+	A:		#10010010b
+
+Le bit de résultat est mis à 1 SI et SEULEMENT SI le bit des deux opérandes sont à 1.
+
+ASL - Arithmetic Shift Left -
+Flags afféctés: N,C,Z
+Comme son nom l'indique, cette fonction va effectuer un décalage des bits vers la gauche de l'operande passée
+en paramètre et placer le résultat dans cette même opérande. Si le bit 7 de l'opérande est à 1 le bit de retenue
+sera mis à 1.
+	Operande:	#10010100b
+			----------
+	Résultat:	#00101000b avec bit de retenue à 1
+	   _________________
+	C<-|7|6|5|4|3|2|1|0|<-0
+	   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+
+BCC - Branch if Carry Clear - Instruction de branchement -
+Flags afféctés: aucuns
+Il s'agit d'une instruction de branchement. Le saut à l'adresse indiquée en paramètre est efféctué si le bit
+de retenue (flag C) est à 0 (clear). Le seul mode d'adressage est le mode relatif (voir modes d'adressages).
+Si le bit de retenue est à 1, le cycle continue normalement (compteur ordinal incrémenté).
+
+BCS - Branch if Carry Set - Instruction de branchement -
+Flags afféctés: aucuns
+Comme la précédente instruction sauf que le branchement s'effectue uniquement si le bit de retenue est à 1,
+sinon le programme continue.
+
+BEQ - Branch if Equal - Instruction de branchement -
+Flags afféctés: aucuns
+Cette instruction effectue un branchement uniquement si le bit d'etat Zero (Z) est à 1, sinon poursuit sur la
+prochaine instruction. Utile pour controler une boucle (souvent avec les registres X et Y).
+
+BIT - Bit Test -
+Flags afféctés: N,V,Z
+Effectue un ET logique entre A et l'opérande passée en paramètre (M) et mets le flag à jour mais ne mets pas
+le résultat dans A. A ET M est calculé est le resultat est testé.
+Exemple: si A ET M = 0 -> flag Z = 1
+
+BMI - Branch if Minus - Instruction de branchement -
+Flags afféctés: aucuns
+Effectue un branchement si le bit d'etat négatif (N) est à 1. Sinon le programme continue sur la prochaine
+instruction à executer.
+
+BNE - Branch if not Equal - Instruction de branchement -
+Flags afféctés: aucuns
+Effectue un branchement à l'adresse indiquée si le bit d'etat zero (Z) est à 0. Sinon poursuit sur la prochaine
+instruction.
+
+BPL - Branch on Plus -  Instruction de branchement -
+Flags afféctés: aucuns
+Effectue un branchement à l'adresse indiquée si le bit d'etat negatif (N) est à 0. Sinon poursuit sur la prochaine
+instruction.
+
+BRK - Break -
+Flags afféctés: B,I
+Cette instruction force l'execution d'une interruption IRQ est mets les flags B (Break) et I (Interrupt) à 1.
+Les détails sur les interruptions seront évoqués après.
+
+BVC - Branch if Overflow Clear -
+Flags afféctés: aucuns
+Effectue un branchement à l'adresse indiquée si le bit de dépassement signé (V) est à 0. Sinon poursuit sur la prochaine
+instruction.
+
+BVS - Branch if Overflow Set -
+Flags afféctés: aucuns
+Effectue un branchement à l'adresse indiquée si le bit de dépassement signé (V) est à 1. Sinon poursuit sur la prochaine
+instruction.
+
+CLC - Clear Carry -
+Flags afféctés: C
+Cette instruction remet le bit de retenue du registre d'etat à 0. Indispensable avant de faire un nouveau
+calcul à l'aide de l'instruction ADC par exemple.
+
+CLD - Clear Decimal Mode -
+Flags afféctés: D
+Cette instruction met le bit du mode décimal (D) à zero. Normalement inutile vu que le processeur commence avec son
+registre d'état à 0.
+
+CLI - Clear Interrupt Disable -
+Flags afféctés: I
+Cette instruction remet le flag de bloquage des interruptions (I) à 0, autorisant ainsi à nouveau les interruptions.
+
+CLV - Clear Overflow Flag -
+Flags afféctés: V
+Cette instruction met le flag d'indication de depassement signé (V) à 0. Indispensable si vous faites des calculs signés
+car ils utilisent ce flag.
+
+CMP - Compare Memory And Accumulateur (comparaison de l'accumulateur avec une valeur en mémoire centrale) -
+Flags afféctés: N,Z,C
+Il s'agit d'une instruction de comparaison indispensable pour la création de structures conditionelles, pour pouvoir
+utiliser ensuite les instructions de branchement. Son fonctionnement est établi comme suit:
+Si A < opérande -> N=1, Z=0, C=0
+Si A = opérande -> N=0, Z=1, C=1
+Si A > opérande -> N=0, Z=0, C=1
+Pour définir la valeur de l'opérande on dispose de nombreux modes d'adressage applicables à l'accumulateur.
+Cette instruction ne donne pas de résultat mais modifie systématiquement les 3 flags N,Z et C.
+
+CPX - Compare Memory And X (comparaison du registre X et d'une opérande) -
+Flags afféctés: N,Z,C
+Pareil que l'instruction précédente mais ici appliqué au registre X, ce qui signifie que beaucoup moins de modes
+d'adressages seront disponibles (voir table des opcodes pour détail).
+
+CPY - Compare Memory And Y (comparaison du registre Y et d'une opérande) -
+Flags afféctés: N,Z,C
+Même remarque que pour l'instruction précédente.
+
+DEC - Decrement Source -
+Flags afféctés: N,Z
+On passe une adresse mémoire d'une opérande, on la décrémente et on place le résultat dans cette même adresse
+mémoire. Les flags N et Z seront mis à jour en conséquence (Z si opérande == 0, N si bit 7 de l'opérande est à 1).
+Seuls les modes d'adressage absolus sont disponibles pour cette instruction.
+
+DEX - Decrement X -
+Flags afféctés: N,Z
+Exactement la même chose que l'instruction précédente, mais ici appliqué au registre X. On n'a donc plus besoin
+de passer une adresse à l'instruction.
+Remarque interessante: sur cette version du processeur, il n'y pas d'instruction pour incrémenter ou decrémenter
+le registre accumulateur! Un oubli qui sera comblé sur le 65C02.
+
+DEY - Decrement Y -
+Flags afféctés: N,Z
+Bon est-il vraiment besoin de parler de ca...
+
+EOR - Exclusive-OR (OU exclusif de la memoire avec l'accumulateur) -
+Flags afféctés: N,Z
+Encore une instruction logique, un peu plus complexe puisqu'elle correspond a un "( NON (A ET B)) ET (A OU B)"
+c'est à dire que vous ne mettez le bit à 1 que si un seul des bits d'origine est à 1, sinon 0.
+Voilà comment ca marche:
+	opérande: #10010110b
+	A	: #11011011b
+		  ----------
+	A	: #01001101b
+En fonction du résultat les flags N et Z seront mis à jour de la même façon que d'habitude.
+
+INC - Increment Memory -
+Flags afféctés: N,Z
+Incrémente de 1 l'opérande dont l'adresse est passée en paramètre à l'instruction (définie par le mode d'adressage).
+En fonction du résultat les flags N et Z sont mis à jour.
+
+INX - Increment X -
+Flags afféctés: N,Z
+Même chose mais pour le registre X. Pas besoin de passer l'adresse c'est une instruction impliée.
+
+INY - Increment Y -
+Flags afféctés: N,Z
+Même chose mais pour le registre Y. Pas besoin de passer l'adresse c'est une instruction impliée.
+
+JMP - Jump -
+Flags afféctés: aucuns
+Un grand classique, cette instruction effectue un saut inconditionnel direct à l'adresse indiquée dans le programme
+et éxecute l'instruction suivante à cette adresse. Elle dispose de 2 modes d'adressage: absolu et, particulier
+puisqu'elle est la seule sur le 6502 à l'utiliser, le mode d'adressage indirect absolu 
+(voir plus haut pour son fonctionnement).
+
+JSR -  Jump to SubRoutine -
+Flags afféctés: aucuns
+Cette instruction permet de faire un saut vers un sous-code situé dans la suite d'instruction langage machine (PRG-ROM).
+L'appel de cette instruction suppose necessairement l'appel prochain de l'instruction RTS ou RTI (voir plus loin).
+Alord quelle difference avec l'appel de JMP? Bien cela se situe au niveau de la pile...
+Le contenu du registre compteur ordinal (Program Counter) est mis sur la pile à l'appel d'une instruction JSR.
+Celui-ci est automatiquement dépilé et restauré à l'appel de RTS.
+Comme la plupart du temps on utilise JSR pour simuler le fonctionnement de fonctions, il faudra prévoir
+le passage des paramètres. La solution la plus simple consiste a utiliser les registres.
+Si vous utilisez la pile faites attention au fait que l'on sauvegarde 16 bits sur la pile à l'appel de JSR et
+donc vos paramètres risquent de se retrouver en dessous.
+Le seul mode d'adressage disponible pour cette instruction est absolu.
+
+LDA - Load Accumulator (charger dans l'accumulateur) -
+Flags afféctés: N,Z
+On passe une adresse en paramètre à l'instruction LDA, l'opérande située à cette adresse en mémoire centrale
+est chargée dans l'accumulateur, puis la valeur mise dans l'accumulateur est évaluée pour determiner les flags N et Z.
+
+LDX - Load Register X (charger dans registre X) -
+Flags afféctés: N,Z
+La même chose que précedemment, éxcépté le fait que les modes d'adressage indéxé ne peuvent être utilisés.
+
+LDY - Load Register Y (charger dans registre Y) -
+Flags afféctés: N,Z
+Pareil qu'avant mais pour le registre Y.
+
+LSR - Logical Shift Right -
+Flags afféctés: N,C,Z
+Semblable à l'instruction ASL mais ici le décalage s'effectue vers la droite. On peut soit effectuer le decalage
+sur une opérande située en mémoire centrale, soit sur l'accumulateur (A). Si le bit 0 est à 1 avant décalage alors
+on met le bit de retenue du registre d'état à 1 (C), sinon à 0.
+Exemple:
+	opérande: #10010101b
+		  ---------
+	après:	: #01001010b avec flag Carry à 1
+En fonction du résultat les bits N et Z seront mis à jour comme d'habitude.
+
+	   _________________
+	0->|7|6|5|4|3|2|1|0|->C
+	   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+
+NOP - No Opération -
+Flags afféctés: aucuns
+Cette instruction n'effectue rien mais correspond à un cycle complet d'execution d'horloge du processeur, par
+conséquent elle est très utile pour ralentir le programme sur une machine dont on sait que la vitesse du processeur
+restera constant (c'est le cas de la NES), mais il est plus rigoureux de passer par la méthode du VBlank.
+
+ORA - Logical Inclusive OR ( OU logique) -
+Flags afféctés: N,Z
+Cette instruction effectue un OU logique entre l'accumulateur et une opérande située en mémoire centrale.
+Le OU a un fonctionnement très simple: si au moins 1 des 2 bits sont à 1, le bit de résultat est à 1.
+Voilà comment cela fonctionne en détail:
+	Accumulateur:	#10010100b
+	opérande    :	#01001001b
+			----------
+	Accumulateur:   #11011101b
+En fonction du résultat dans l'accumulateur, les flags N et Z seront mis à jour.
+
+PHA - Push A -
+Flags afféctés: aucuns
+Cette instruction copie l'opérande contenue dans l'accumulateur et l'empile (la place au sommet de la pile).
+A chaque opérande empilée bien entendu le pointeur de pile est incrémenté.
+
+PHP - Push Processor Status Register (empiler le registre d'etat) -
+Flags afféctés: aucuns
+Cette instruction empile le contenu du registre d'etat. C'est la seule facon d'acceder à son contenu.
+C'est très pratique pour executer une suite d'instruction et être sur de pouvoir récupérer son contenu intact
+après (à l'aide de l'instruction PLP).
+
+PLA - Pull Accumulator (dépiler dans l'accumulateur) -
+Flags afféctés: N,Z
+L'instruction transfert la valeur située au sommet de la pile dans l'accumulateur et
+décrémente le pointeur de pile. En fonction de l'opérande placée dans l'accumulateur
+les flags N et Z sont mis à jour.
+
+PLP - Pull Processor Status (dépiler dans le registre d'état) -
+Flags afféctés: tous
+Cette instruction va dépiler dans le registre d'etat, de fait TOUS les flags seront soumis
+à un eventuel changement.
+
+ROL - Rotate Left (rotation binaire vers la gauche) -
+Flags afféctés: N,Z,C
+Cette instruction peut sembler identique à ASL mais elle possède une différence fondamentale, en effet le contenu
+du bit de retenue est mis au début de l'opérande sur laquelle on effectue un ROL.
+Voilà un bref exemple de son fonctionnement:
+	CLC ; on s'assure que le carry flag est bien à 0
+	LDA #10010010b
+	ROL A ; a ce moment on va avoir dans A la valeur suivante: #00100100b avec notre carry flag à 1
+	ROL A ; maintenant le contenu de A est: #01001001b , le carry flag est à 0
+L'opérande passé en paramètre à cette instruction peut être indifférement l'accumulateur ou une opérande
+située en mémoire centrale.
+	   _________________
+	C<-|7|6|5|4|3|2|1|0|<-C
+	   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+
+ROR - Rotate Right (rotation binaire vers la droite) -
+Flags afféctés: N,Z,C
+Son fonctionnement est identique à celui de LSR mais avec les particularités du point de vue de la retenue
+énoncées ci-dessus.
+	   _________________
+	C->|7|6|5|4|3|2|1|0|->C
+	   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+RTI - Return from Interrupt -
+Flags afféctés: aucuns
+Après l'executation d'une interruption cela permet de restaurer le contenu du compteur ordinal et revenir dans le
+programme au moment où l'execution de l'interruption avait commencé.
+
+RTS - Return from SubRoutine -
+Flags afféctés: aucuns
+Cette instruction dépile 16 bits pour les mettre dans le registre compteur ordinal (adresse à l'appel de l'instruction JSR)
+ce qui provoque un retour à l'endroit d'appel de sous routine dans le programme (PRG-ROM).
+
+SBC - Substract with Carry -
+Flags afféctés: N,Z,C,V
+Soustrait de l'accumulateur une opérande dont la valeur se trouve à l'adresse passée en paramètre à l'instruction.
+Le résultat est placé dans l'accumulateur est évalué pour déterminer le nouvel état des flags N,Z,C et V.
+Attention ne pas oublier la valeur du bit de retenue (flag C).
+
+SEC - Set Carry Flag -
+Flags afféctés: C
+Cette instruction met juste le bit de retenue (C) à 1.
+
+SED - Set Decimal Mode -
+Flags afféctés: D
+Cette instruction met le bit de mode décimal (D) à 1.
+
+SEI - Set Interrupt Disable -
+Flags afféctés: I
+Permet de mettre le flag I (Interrupt Disable) à 1. Cela permet de bloquer les interruptions autres que les NMI 
+(Non Masquable).
+
+STA - Store Accumulator -
+Flags afféctés: aucuns
+Copie le contenu de l'accumulateur à l'adresse en mémoire centrale passée en paramètre à l'instruction.
+
+STX - Store X Register -
+Flags afféctés: aucuns
+Pareil que l'instruction précedente mais ici pour le registre X, par conséquent les modes d'adressages indéxés ne peuvent
+pas être utilisés.
+
+STY - Store Y Register -
+Flags afféctés: aucuns
+Même chose que précédement mais pour le registre Y.
+
+TAX - Transfer Accumulator to X (transfert l'accumulateur vers registre X) -
+Flags afféctés: N,Z
+Copie le contenu de l'accumulateur dans X, et mets les flags N et Z à jour en fonction du résultat (normalement inutile).
+
+TAY - Transfer Accumulator to Y (transfert l'accumulateur vers registre Y) -
+Flags afféctés: N,Z
+Même chose que précedement mais pour le registre Y.
+
+TSX - Transfer Stack To X (Mets le contenu du registre pointeur de pile dans le registre X) -
+Flags afféctés: N,Z
+Mets la valeur du registre pointeur de pile dans le registre X, ce qui permet de savoir sur quelle valeur pointe
+actuellement le pointeur de pile. Les flags sont mis à jour en fonction de la valeur dans le registre X.
+
+TXA - Transfer X to Accumulator -
+Flags afféctés: N,Z
+Copie la valeur contenue dans le registre X dans l'accumulateur et mets les flags N et Z à jour.
+
+TXS - Transfer X to Stack -
+Flags afféctés: N,Z
+Copie le contenu du registre X dans le registre pointeur de pile (S), c'est la seule facon de modifier directement le 
+pointeur de pile. Cette instruction est notamment utilisée au début d'un programme car le pointeur de pile ne commence
+pas automatiquement à l'endroit adéquate ($FF).
+On peut également s'en servir pour manipuler la pile plus précisement (passage de paramètre par la pile par exemple).
+
+TYA - Transfer Y to Accumulator -
+Flags afféctés: N,Z
+Copie la valeur contenue dans le registre Y dans l'accumulateur et mets les flags N et Z à jour.
+
+	4. Tableau détaillé des opcodes par ordre alphabetique:
+
+--------------------------------------------------
+   ADC  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      ADC        #aa                   69	2
+      ADC        $aa                    65	2
+      ADC        $aa,X                  75	2
+      ADC        $aaaa                  60	3
+      ADC        $aaaa,X                70	3
+      ADC        $aaaa,Y                79	3
+      ADC        ($aa,X)                61	2
+      ADC        ($aa),Y                71	2
+
+--------------------------------------------------
+   AND  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      AND        #aa                   29	2
+      AND        $aa                    25	2
+      AND        $aa,X                  35	2
+      AND        $aaaa                  2D	3
+      AND        $aaaa,X                3D	3
+      AND        $aaaa,Y                39	3
+      AND        ($aa,X)                21	2
+      AND        ($aa),Y                31	2
+
+--------------------------------------------------
+   ASL  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      ASL        A                     0A	1
+      ASL        $aa                    06	2
+      ASL        $aa,X                  16	2
+      ASL        $aaaa                  0E	3
+      ASL        $aaaa,X                1E	3
+
+--------------------------------------------------
+   BCC  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      BCC        $aa                    90	2
+
+--------------------------------------------------
+   BCS  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      BCS        $aa                    B0	2
+
+--------------------------------------------------
+   BEQ  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      BEQ        $aa                    F0	2
+
+--------------------------------------------------
+   BIT  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      BIT        $aa                    24	2
+      BIT        $aaaa                  2C	3
+
+--------------------------------------------------
+   BMI  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      BMI        $aa                    30	2
+
+--------------------------------------------------
+   BNE  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      BNE        $aa                    D0	2
+
+--------------------------------------------------
+   BPL  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      BPL        $aa                    10	2
+
+--------------------------------------------------
+   BRK  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      BRK                              00	1
+
+--------------------------------------------------
+   BVC  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+      
+      BVC        $aa                    50	2
+
+--------------------------------------------------
+   BVS  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      BVS        $aa                    70	2
+
+--------------------------------------------------
+   CLC  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      CLC                              18	1
+
+--------------------------------------------------
+   CLD  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      CLD                              D8	1
+
+--------------------------------------------------
+  CLI  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      CLI                              58	1
+
+--------------------------------------------------
+   CLV  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      CLV                              B8	1
+
+--------------------------------------------------
+   CMP  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      CMP        #aa                   C9	2
+      CMP        $aa                    C5	2
+      CMP        $aa,X                  D5	2
+      CMP        $aaaa                  CD	3
+      CMP        $aaaa,X                DD	3
+      CMP        $aaaa,Y                D9	3
+      CMP        ($aa,X)                C1	2
+      CMP        ($aa),Y                D1	2
+
+--------------------------------------------------
+   CPX  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      CPX        #aa                   E0	2
+      CPX        $aa                    E4	2
+      CPX        $aaaa                  EC	3
+
+--------------------------------------------------
+   CPY  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      CPY        #aa                   C0	2
+      CPY        $aa                    C4	2
+      CPY        $aaaa                  CC	3
+
+--------------------------------------------------
+   DEC  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      DEC        $aa                    C6	2
+      DEC        $aa,X                  D6	2
+      DEC        $aaaa                  CE	3
+      DEC        $aaaa,X                DE	3
+
+--------------------------------------------------
+   DEX  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      DEX                              CA	1
+
+--------------------------------------------------
+   DEY  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      DEY                              88	1
+
+--------------------------------------------------
+   EOR  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+      
+      EOR        #aa                   49	2
+      EOR        $aa                   45	2
+      EOR        $aa,X                 55	2
+      EOR        $aaaa                 4D	3
+      EOR        $aaaa,X               5D	3
+      EOR        $aaaa,Y               59	3
+      EOR        ($aa,X)               41	2
+      EOR        ($aa),Y               51	2
+
+--------------------------------------------------
+   INC  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      INC        $aa                    E6	2
+      INC        $aa,X                  F6	2
+      INC        $aaaa                  EE	3
+      INC        $aaaa,X                FE	3
+
+--------------------------------------------------
+   INX  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      INX                              E8	1
+
+--------------------------------------------------
+   INY  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      INY                              C8	1
+
+--------------------------------------------------
+   JMP  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      JMP        $aaaa                 4C	3
+      JMP        ($aaaa)               6C	3
+
+--------------------------------------------------
+   JSR  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      JSR        $aaaa                 20	3
+
+--------------------------------------------------
+   LDA  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      LDA        #aa                   A9	2
+      LDA        $aa                   A5	2
+      LDA        $aa,X                 B5	2
+      LDA        $aaaa                 AD	3
+      LDA        $aaaa,X               BD	3
+      LDA        $aaaa,Y               B9	3
+      LDA        ($aa,X)               A1	2
+      LDA        ($aa),Y               B1	2
+
+--------------------------------------------------
+   LDX  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      LDX        #aa                   A2	2
+      LDX        $aa                   A6	2
+      LDX        $aa,Y                 B6	2
+      LDX        $aaaa                 AE	3
+      LDX        $aaaa,Y               BE	3
+
+--------------------------------------------------
+   LDY  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      LDY        #aa                   A0	2
+      LDY        $aa                   A4	2
+      LDY        $aa,X                 B4	2
+      LDY        $aaaa                 AC	3
+      LDY        $aaaa,X               BC	3
+
+--------------------------------------------------
+   LSR  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      LSR        A                     4A	1
+      LSR        $aa                   46	2
+      LSR        $aa,X                 56	2
+      LSR        $aaaa                 4E	3
+      LSR        $aaaa,X               5E	3
+
+--------------------------------------------------
+   NOP  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      NOP                              EA	1
+
+--------------------------------------------------
+   ORA  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      ORA        #aa                   09	2
+      ORA        $aa                   05	2
+      ORA        $aa,X                 15	2
+      ORA        $aaaa                 0D	3
+      ORA        $aaaa,X               1D	3
+      ORA        $aaaa,Y               19	3
+      ORA        ($aa,X)               01	2
+      ORA        ($aa),Y               11	2
+
+--------------------------------------------------
+   PHA  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      PHA                              48	1
+
+--------------------------------------------------
+   PHP  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      PHP                              08	1
+
+--------------------------------------------------
+   PLA  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      PLA                              68	1
+
+--------------------------------------------------
+   PLP  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      PLP                              28	1
+
+--------------------------------------------------
+   ROL  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      ROL        A                     2A	1
+      ROL        $aa                   26	2
+      ROL        $aa,X                 36	2
+      ROL        $aaaa                 2E	3
+      ROL        $aaaa,X               3E	3
+
+--------------------------------------------------
+   ROR  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+      
+      ROR        A                     6A	1
+      ROR        $aa                   66	2
+      ROR        $aa,X                 76	2
+      ROR        $aaaa                 6E	3
+      ROR        $aaaa,X               7E	3
+
+--------------------------------------------------
+   RTI  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      RTI                              40	1
+
+--------------------------------------------------
+   RTS  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      RTS                              60	1
+
+--------------------------------------------------
+   SBC  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      SBC        #aa                   E9	2
+      SBC        $aa                   E5	2
+      SBC        $aa,X                 F5	2
+      SBC        $aaaa                 ED	3
+      SBC        $aaaa,X               FD	3
+      SBC        $aaaa,Y               F9	3
+      SBC        ($aa,X)               E1	2
+      SBC        ($aa),Y               F1	2
+
+--------------------------------------------------
+   SEC  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      SEC                              38	1
+
+--------------------------------------------------
+   SED  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      SED                              F8	1
+
+--------------------------------------------------
+   SEI  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      SEI                              78	1
+
+--------------------------------------------------
+   STA  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      STA        $aa                   85	2
+      STA        $aa,X                 95	2
+      STA        $aaaa                 8D	3
+      STA        $aaaa,X               9D	3
+      STA        $aaaa,Y               99	3
+      STA        ($aa,X)               81	2
+      STA        ($aa),Y               91	2
+
+--------------------------------------------------
+   STX  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      STX        $aa                   86	2
+      STX        $aa,Y                 96	2
+      STX        $aaaa                 8E	3
+
+--------------------------------------------------
+   STY  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      STY        $aa                   84	2
+      STY        $aa,X                 94	2
+      STY        $aaaa                 8C	3
+
+--------------------------------------------------
+   TAX  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      TAX                              AA	1
+
+--------------------------------------------------
+   TAY  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      TAY                              A8	1
+
+--------------------------------------------------
+   TSX  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+      
+      TSX                              BA	1
+
+--------------------------------------------------
+   TXA  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+      
+      TXA                              8A	1
+
+--------------------------------------------------
+   TXS  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+      
+      TXS                              9A	1
+
+--------------------------------------------------
+   TYA  -
+      Mnemonic   Mode d'adressage     Opcode	Taille
+
+      TYA                              98	1
+
+	5. Interruptions:
+
+Les interruptions sont des évenements externes au processeur proprement dit qui proviennent des périphériques.
+Pour vous donner une idée, lors d'une interruption, le cycle courant des instructions (du programme) est interrompu
+quoiqu'il arrive pour executer le code correspondant à l'interruption.
+Sur le 6502 il y a 3 type d'interruptions:
+
+-On distingue d'abord les NMI, Non-Maskable Interrupts. Celles-ci ne peuvent pas être désactivées par l'activation du flag I.
+Pour la NES il s'agit surtout des interruptions provenant de la PPU (notamment Vblank). A l'appel de cette interruption 
+on va éxecuter la sous routine dont l'adresse se trouve dans la mémoire à $FFFA ($FFFA -> low,$FFFB -> high)
+La mise à jour d'une NMI est efféctué 60x/secondes(taux de rafraichissement d'un VBlank).
+On peut s'en servir pour écrire des données dans la PPU lors d'un VBlank (utilisation la plus couramment constatée).
+Ecrire des données en VRAM hors d'un VBlank n'est pas tellement grave sur un émulateur, mais est une source
+de bugs inévitable sur la console réelle.
+
+Les types d'interruptions suivants peuvent être désactivés en mettant le flag I du Processor Status à 1:
+
+-Il y a ensuite l'interruption RESET, qui est automatiquement éxecutée à la mise en marche du processeur.
+L'adresse de la sous-routine de l'interruption RESET est en $FFFC ($FFFC -> low,$FFFD -> high).
+Cette interruption etant automatiquement activée au demarrage, l'adresse mise en $FFFC DOIT ABSOLUMENT ETRE LE DEBUT
+DU PROGRAMME même si le flag I est activé.
+
+-Le dernier type d'interruption est soit le fait d'une execution d'une instruction BRK, ou requête d'interruption (IRQ)
+de la part d'un périphérique cablé (cette dernière solution n'est pas très importante sur NES et est souvent negligée).
+Cépendant l'adresse pour la routine a utiliser est $FFFE. Son utilisation peut notamment être occuré par l'utilisation
+du canal sonore DMC, voir détails après.
+
+Note: il faut impérativement utiliser l'instruction RTI pour terminer une routine qui a été appelée par une interruption!
+Note 2: les adresses sont supposées se trouver dans les banques de PRG-ROM, leur emplacement est invariable.
+
+Avertissement: N'oubliez surtout pas que les interruptions peuvent survenir n'importe quand dans le programme.
+Dans vos routines d'interruption, vous allez être amené à modifier le contenu des registres, hors imaginons que
+l'interruption arrive au moment où une sous routine est en cours d'execution dans le programme principal par
+exemple, le résultat serait que le programme sera faussé par l'execution de la routine de l'interruption.
+Pour éviter ce genre de désagrément il suffit de sauvegarder le contenu des registres au debut de l'éxecution
+de la routine liée à l'interruption et de le restaurer à la fin.
