@@ -5,6 +5,16 @@
 #include "types.h"
 
 typedef struct {
+  BYTE ram[2048];
+  BYTE ppu_reg[8];
+  BYTE apu_reg[20];
+  BYTE exp_rom[8159];
+  BYTE sram[8192];
+  BYTE bank1[16384];
+  BYTE bank2[16384];
+} Memory;
+
+typedef struct {
   BYTE A;     // Accumulator
   BYTE X;     //
   BYTE Y;
@@ -19,9 +29,11 @@ typedef struct {
   BYTE *SP;
   BYTE *bank1;
   BYTE *bank2;
+  Memory *mem;
 } CPU6502;
 
-void    cpu_6502_load_rom   (CPU6502 *cpu, RomNES *rom);
-void    cpu_6502_step       (CPU6502 *cpu);
+CPU6502 * cpu_6502_new      (void);
+void      cpu_6502_load_rom (CPU6502 *cpu, RomNES *rom);
+void      cpu_6502_step     (CPU6502 *cpu);
 
 #endif

@@ -1,4 +1,5 @@
 #include "cpu_6502.h"
+#include <stdlib.h>
 #include <stdio.h>
 
 enum {
@@ -9,6 +10,23 @@ enum {
   OP_6502_CLD     = 0xd8,
   OP_6502_DEFAULT = 0x00
 } OpCodes;
+
+/*enum {
+  OP_6502_ADC     = ,
+  OP_6502_AND,
+  OP_6502_ASL
+} OpCodes;*/
+
+CPU6502 *
+cpu_6502_new (void) {
+  CPU6502 *cpu;
+
+  cpu = calloc (sizeof (CPU6502), 1);
+
+  cpu->mem = calloc (sizeof (Memory), 1);
+
+  return cpu;
+}
 
 void
 cpu_6502_load_rom (CPU6502 *cpu, RomNES *rom) {

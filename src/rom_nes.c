@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 RomNES *
 rom_nes_new (const char *filename) {

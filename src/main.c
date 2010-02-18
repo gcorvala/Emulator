@@ -62,7 +62,7 @@ main () {
 
   printf ("Load CPU6502 START\n");
 
-  cpu = malloc (sizeof (CPU6502));
+  cpu = cpu_6502_new ();
   cpu_6502_load_rom (cpu, rom);
   cpu_6502_step (cpu);
   cpu_6502_step (cpu);
