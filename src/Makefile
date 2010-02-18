@@ -1,6 +1,9 @@
 CC = gcc -Wall
 
 OBJECTS = cpu_2A03.o \
+	mapper.o \
+	papu.o \
+	ppu.o \
 	rom_nes.o
 
 BIN = main
