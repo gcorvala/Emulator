@@ -25,7 +25,7 @@ mapper_get_memory (Mapper *mapper, ADDR addr) {
     ADDR real_addr;
 
     real_addr = addr % 0x8000;
-    printf ("mapper_get_memory at %04x is a real_address %p ", addr, mapper->rom->prg + real_addr);
+    //printf ("\tmapper_get_memory at %04x is a real_address %p\n", addr, mapper->rom->prg + real_addr);
     value = *(mapper->rom->prg + real_addr);
   }
 

@@ -4,6 +4,7 @@
 
 #include "cpu.h"
 #include "rom.h"
+#include "types.h"
 
 const char *ROM_FILENAME = "super.nes";
 
@@ -12,6 +13,7 @@ main () {
   Rom *rom;
   CPU *cpu;
   Mapper *mapper;
+  ADDR addr;
 
   printf ("Emulator START\n");
 
@@ -85,25 +87,13 @@ main () {
   printf ("cpu->mem->[0x1600] = %02x\n", cpu_get_memory (cpu, 0x1600));
   printf ("cpu->mem->[0x0600] = %02x\n", cpu_get_memory (cpu, 0x0600));
 
-  printf ("cpu->mem->[0x8000] = %02x\n", cpu_get_memory (cpu, 0x8000));
-  printf ("cpu->mem->[0x8001] = %02x\n", cpu_get_memory (cpu, 0x8001));
-  printf ("cpu->mem->[0x8002] = %02x\n", cpu_get_memory (cpu, 0x8002));
-  printf ("cpu->mem->[0x8003] = %02x\n", cpu_get_memory (cpu, 0x8003));
-  printf ("cpu->mem->[0x8004] = %02x\n", cpu_get_memory (cpu, 0x8004));
-  printf ("cpu->mem->[0x8005] = %02x\n", cpu_get_memory (cpu, 0x8005));
-  printf ("cpu->mem->[0x8006] = %02x\n", cpu_get_memory (cpu, 0x8006));
-  printf ("cpu->mem->[0x8007] = %02x\n", cpu_get_memory (cpu, 0x8007));
+  for (addr = 0x8000; addr != 0x8008; ++addr) {
+    printf ("\tcpu->mem->[0x%04x] = %02x\n", addr, cpu_get_memory (cpu, addr) & 0xff);
+  }
 
-//  printf ("cpu->mem->[0xFFF6] = %02x\n", cpu_get_memory (cpu, 0xFFF6));
-//  printf ("cpu->mem->[0xFFF7] = %02x\n", cpu_get_memory (cpu, 0xFFF7));
-  printf ("cpu->mem->[0xFFF8] = %02x\n", cpu_get_memory (cpu, 0xFFF8));
-  printf ("cpu->mem->[0xFFF9] = %02x\n", cpu_get_memory (cpu, 0xFFF9));
-  printf ("cpu->mem->[0xFFFA] = %02x\n", cpu_get_memory (cpu, 0xFFFA));
-  printf ("cpu->mem->[0xFFFB] = %02x\n", cpu_get_memory (cpu, 0xFFFB));
-  printf ("cpu->mem->[0xFFFC] = %02x\n", cpu_get_memory (cpu, 0xFFFC));
-  printf ("cpu->mem->[0xFFFD] = %02x\n", cpu_get_memory (cpu, 0xFFFD));
-  printf ("cpu->mem->[0xFFFE] = %02x\n", cpu_get_memory (cpu, 0xFFFE));
-  printf ("cpu->mem->[0xFFFF] = %02x\n", cpu_get_memory (cpu, 0xFFFF));
+  for (addr = 0xFFF8; addr != 0x0000; ++addr) {
+    printf ("\tcpu->mem->[0x%04x] = %02x\n", addr, cpu_get_memory (cpu, addr) & 0xff);
+  }
 
   printf ("Load CPU END\n");
 
