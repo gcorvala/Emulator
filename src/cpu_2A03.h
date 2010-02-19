@@ -18,6 +18,7 @@ typedef struct {
   BYTE *IP;
   BYTE *SP;
   BYTE ram[0x800]; // 2KB
+  // stack stored at $0100-$01FF
 } CPU2A03;
 
 CPU2A03 * cpu_2A03_new      (void);
