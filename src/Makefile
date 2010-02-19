@@ -4,7 +4,7 @@ OBJECTS = cpu.o \
 	mapper.o \
 	papu.o \
 	ppu.o \
-	rom_nes.o
+	rom.o
 
 BIN = main
 

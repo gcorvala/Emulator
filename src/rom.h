@@ -1,5 +1,5 @@
-#ifndef _ROM_NES_H_
-#define _ROM_NES_H_
+#ifndef _ROM_H_
+#define _ROM_H_
 
 #include "types.h"
 
@@ -12,9 +12,9 @@ typedef struct {
   int sram : 1;
   int trainer : 1;
   int four_screen : 1;
-} RomNES;
+} Rom;
 
-RomNES * rom_nes_new (const char *filename);
-void     rom_nes_free (RomNES *rom);
+Rom * rom_new (const char *filename);
+void  rom_free (Rom *rom);
 
 #endif

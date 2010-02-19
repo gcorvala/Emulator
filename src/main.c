@@ -3,13 +3,13 @@
 #include <stdlib.h>
 
 #include "cpu.h"
-#include "rom_nes.h"
+#include "rom.h"
 
 const char *ROM_FILENAME = "super.nes";
 
 int
 main () {
-  RomNES *rom;
+  Rom *rom;
   CPU *cpu;
   Mapper *mapper;
 
@@ -17,7 +17,7 @@ main () {
 
   printf ("Load RomNES START\n");
 
-  rom = rom_nes_new (ROM_FILENAME);
+  rom = rom_new (ROM_FILENAME);
 
   printf ("\trom->prg_page_count = %d\n", rom->prg_page_count);
   printf ("\trom->chr_page_count %d\n", rom->chr_page_count);
@@ -107,8 +107,8 @@ main () {
 
   printf ("Load CPU END\n");
 
-  free (rom);
-  free (cpu);
+  rom_free (rom);
+  cpu_free (cpu);
 
   printf ("Emulator END\n");
 

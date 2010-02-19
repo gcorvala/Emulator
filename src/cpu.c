@@ -11,7 +11,6 @@ enum {
   OP_2A03_DEFAULT = 0x00
 } OpCodes;
 
-
 BYTE
 cpu_get_memory (CPU *cpu, ADDR addr) {
   BYTE value = 0;
@@ -22,6 +21,12 @@ cpu_get_memory (CPU *cpu, ADDR addr) {
     real_addr = addr % 0x0800;
 
     value = *(cpu->ram + real_addr);
+  }
+  else if (addr == 0x2000) {
+    printf ("\tcpu_get_memory at %04x is not allowed !\n", addr);
+  }
+  else if (addr == 0x2001) {
+    printf ("\tcpu_get_memory at %04x is not allowed !\n", addr);
   }
   else if (addr >= 0x8000) {
     value = mapper_get_memory (cpu->mapper, addr);
@@ -53,6 +58,8 @@ cpu_new (void) {
 
   cpu = calloc (sizeof (CPU), 1);
 
+  cpu->SP = 0x01FF;
+
   return cpu;
 }
 
@@ -62,7 +69,7 @@ cpu_free (CPU *cpu) {
 }
 
 void
-cpu_load_rom (CPU *cpu, RomNES *rom) {
+cpu_load_rom (CPU *cpu, Rom *rom) {
   cpu->SP = 0;
   cpu->rom = rom;
 }

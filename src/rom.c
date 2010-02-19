@@ -1,4 +1,4 @@
-#include "rom_nes.h"
+#include "rom.h"
 
 #include <fcntl.h>
 #include <stddef.h>
@@ -6,9 +6,9 @@
 #include <stdio.h>
 #include <unistd.h>
 
-RomNES *
-rom_nes_new (const char *filename) {
-  RomNES *rom;
+Rom *
+rom_new (const char *filename) {
+  Rom *rom;
   BYTE header[16];
   int rom_fd;
 
@@ -19,7 +19,7 @@ rom_nes_new (const char *filename) {
     return NULL;
   }
 
-  rom = calloc (sizeof (RomNES), 1);
+  rom = calloc (sizeof (Rom), 1);
 
   if (read (rom_fd, &header, 16) == 0) {
     perror ("rom read");
@@ -68,6 +68,6 @@ rom_nes_new (const char *filename) {
 }
 
 void
-rom_nes_free (RomNES *rom) {
+rom_free (Rom *rom) {
   
 }

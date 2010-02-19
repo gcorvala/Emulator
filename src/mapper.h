@@ -1,17 +1,17 @@
 #ifndef _MAPPER_H_
 #define _MAPPER_H_
 
-#include "rom_nes.h"
+#include "rom.h"
 #include "types.h"
 
 typedef struct {
-  RomNES *rom;
+  Rom *rom;
   BYTE nmi[2];
   BYTE reset[2];
   BYTE irq[2];
 } Mapper;
 
-Mapper * mapper_new (RomNES *rom);
+Mapper * mapper_new (Rom *rom);
 BYTE     mapper_get_memory (Mapper *mapper, ADDR addr);
 void     mapper_set_memory (Mapper *mapper, ADDR addr);
 

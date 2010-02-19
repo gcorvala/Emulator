@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 Mapper *
-mapper_new (RomNES *rom) {
+mapper_new (Rom *rom) {
   Mapper *mapper;
 
   mapper = calloc (sizeof (Mapper), 1);
