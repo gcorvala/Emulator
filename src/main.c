@@ -2,7 +2,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
-#include "cpu_2A03.h"
+#include "cpu.h"
 #include "rom_nes.h"
 
 const char *ROM_FILENAME = "super.nes";
@@ -10,7 +10,7 @@ const char *ROM_FILENAME = "super.nes";
 int
 main () {
   RomNES *rom;
-  CPU2A03 *cpu;
+  CPU *cpu;
 
   printf ("Emulator START\n");
 
@@ -60,31 +60,27 @@ main () {
 
   printf ("Load RomNES END\n");
 
-  printf ("Load CPU2A03 START\n");
+  printf ("Load CPU START\n");
 
-  cpu = cpu_2A03_new ();
-  cpu_2A03_load_rom (cpu, rom);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
-  cpu_2A03_step (cpu);
+  cpu = cpu_new ();
+  cpu_load_rom (cpu, rom);
+  cpu_step (cpu);
+  cpu_step (cpu);
+  cpu_step (cpu);
+  cpu_step (cpu);
+  cpu_step (cpu);
+  cpu_step (cpu);
+  cpu_step (cpu);
+  cpu_step (cpu);
 
-  printf ("Load CPU2A03 END\n");
+  printf ("cpu->mem->[0x0000] = %02x\n", cpu_get_memory (cpu, 0x0000));
+  cpu_set_memory (cpu, 0x0000, 0x48);
+  printf ("cpu->mem->[0x0000] = %02x\n", cpu_get_memory (cpu, 0x0000));
+  printf ("cpu->mem->[0x1600] = %02x\n", cpu_get_memory (cpu, 0x1600));
+  cpu_set_memory (cpu, 0x1600, 0x48);
+  printf ("cpu->mem->[0x1600] = %02x\n", cpu_get_memory (cpu, 0x1600));
+
+  printf ("Load CPU END\n");
 
   free (rom);
 

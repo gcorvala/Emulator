@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 Mapper *
-mapper_new (CPU2A03 *cpu, RomNES *rom, PPU *ppu, PAPU *papu) {
+mapper_new (CPU *cpu, RomNES *rom, PPU *ppu, PAPU *papu) {
   Mapper *mapper;
 
   mapper = calloc (sizeof (Mapper), 1);

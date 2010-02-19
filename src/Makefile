@@ -1,6 +1,6 @@
 CC = gcc -Wall
 
-OBJECTS = cpu_2A03.o \
+OBJECTS = cpu.o \
 	mapper.o \
 	papu.o \
 	ppu.o \

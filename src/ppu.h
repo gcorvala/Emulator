@@ -4,8 +4,7 @@
 #include "types.h"
 
 typedef struct {
-  // 16 KB
-  BYTE ppu;
+  BYTE vram[0x4000]; // 16 KB
 } PPU; // 2C02
 
 #endif
