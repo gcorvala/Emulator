@@ -11,6 +11,42 @@ enum {
   OP_2A03_DEFAULT = 0x00
 } OpCodes;
 
+
+BYTE
+cpu_get_memory (CPU *cpu, ADDR addr) {
+  BYTE value = 0;
+
+  if (addr < 0x2000) {
+    ADDR real_addr;
+    
+    real_addr = addr % 0x0800;
+
+    value = *(cpu->ram + real_addr);
+  }
+  else if (addr >= 0x8000) {
+    value = mapper_get_memory (cpu->mapper, addr);
+  }
+  else {
+    printf ("\tcpu_get_memory at %04x not yet implemented !\n", addr);
+  }
+
+  return value;
+}
+
+void
+cpu_set_memory (CPU *cpu, ADDR addr, BYTE value) {
+  if (addr < 0x2000) {
+    ADDR real_addr;
+
+    real_addr = addr % 0x0800;
+
+    cpu->ram[real_addr] = value;
+  }
+  else {
+    printf ("\tcpu_set_memory at %04x not yet implemented !\n", addr);
+  }
+}
+
 CPU *
 cpu_new (void) {
   CPU *cpu;
@@ -21,9 +57,19 @@ cpu_new (void) {
 }
 
 void
+cpu_free (CPU *cpu) {
+  free (cpu);
+}
+
+void
 cpu_load_rom (CPU *cpu, RomNES *rom) {
   cpu->SP = 0;
   cpu->rom = rom;
+}
+
+void
+cpu_set_mapper (CPU *cpu, Mapper *mapper) {
+  cpu->mapper = mapper;
 }
 
 void
@@ -51,28 +97,3 @@ cpu_step (CPU *cpu) {
   }
   cpu->SP++;
 }
-
-BYTE
-cpu_get_memory (CPU *cpu, ADDR addr) {
-  BYTE value = 0;
-
-  if (addr < 0x0800) {
-    value = *(cpu->ram + addr);
-  }
-  else {
-    printf ("\tcpu_get_memory at %04x not yet implemented !\n", addr);
-  }
-
-  return value;
-}
-
-void
-cpu_set_memory (CPU *cpu, ADDR addr, BYTE value) {
-  if (addr < 0x800) {
-    cpu->ram[addr] = value;
-  }
-  else {
-    printf ("\tcpu_set_memory at %04x not yet implemented !\n", addr);
-  }
-}
-

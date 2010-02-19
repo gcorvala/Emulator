@@ -38,6 +38,9 @@ rom_nes_new (const char *filename) {
   rom->prg_page_count = header[4];
   rom->chr_page_count = header[5];
 
+  printf ("rom control byte 1 : %02x \n", header[6]);
+  printf ("rom control byte 2 : %02x \n", header[7]);
+
   rom->prg = malloc (sizeof (BYTE) * 16 * 1024 * rom->prg_page_count);
   rom->chr = malloc (sizeof (BYTE) * 8 * 1024 * rom->chr_page_count);
 
