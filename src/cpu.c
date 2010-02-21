@@ -2,6 +2,25 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+struct _CPU {
+  BYTE A;
+  BYTE X;
+  BYTE Y;
+  int C : 1;
+  int Z : 1;
+  int I : 1;
+  int D : 1;
+  int B : 1;
+  int V : 1;
+  int S : 1;
+  ADDR IP;
+  ADDR SP;
+  BYTE ram[0x0800]; // 2KB
+  // stack stored at $0100-$01FF
+  Rom *rom;
+  Mapper *mapper;
+};
+
 enum {
   OP_2A03_LDX_I   = 0xa2,
   OP_2A03_LDA_I   = 0xa9,
@@ -69,7 +88,7 @@ cpu_free (CPU *cpu) {
 }
 
 void
-cpu_load_rom (CPU *cpu, Rom *rom) {
+cpu_set_rom (CPU *cpu, Rom *rom) {
   cpu->SP = 0;
   cpu->rom = rom;
 }
@@ -81,13 +100,13 @@ cpu_set_mapper (CPU *cpu, Mapper *mapper) {
 
 void
 cpu_step (CPU *cpu) {
-  printf ("\tcpu_step : [opcode] %02x\n", * (cpu->rom->prg + cpu->SP) & 0xff);
-  switch (cpu->rom->prg[cpu->SP] & 0xff) {
+  printf ("\tcpu_step : [opcode] %02x\n", rom_get_prg_memory (cpu->rom, cpu->SP) & 0xff);
+  switch (rom_get_prg_memory (cpu->rom, cpu->SP) & 0xff) {
     case OP_2A03_LDX_I:
-      cpu->X = cpu->rom->prg[cpu->SP++];
+      cpu->X = rom_get_prg_memory (cpu->rom, cpu->SP++);
       break;
     case OP_2A03_LDA_I:
-      cpu->A = cpu->rom->prg[cpu->SP++];
+      cpu->A = rom_get_prg_memory (cpu->rom, cpu->SP++);
       break;
     case OP_2A03_SEI:
       cpu->I = 1;

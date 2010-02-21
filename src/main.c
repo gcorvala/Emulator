@@ -21,27 +21,28 @@ main () {
 
   rom = rom_new (ROM_FILENAME);
 
-  printf ("\trom->prg_page_count = %d\n", rom->prg_page_count);
-  printf ("\trom->chr_page_count %d\n", rom->chr_page_count);
+  printf ("\tmapper_id = %d\n", rom_get_mapper_id (rom));
+  printf ("\tprg_n_pages = %d\n", rom_get_prg_n_pages (rom));
+  printf ("\tchr_n_pages = %d\n", rom_get_chr_n_pages (rom));
   printf ("\trom->prg start\n");
-  printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom->prg[0] & 0xff
-                               , rom->prg[1] & 0xff
-                               , rom->prg[2] & 0xff
-                               , rom->prg[3] & 0xff
-                               , rom->prg[4] & 0xff
-                               , rom->prg[5] & 0xff
-                               , rom->prg[6] & 0xff
-                               , rom->prg[7] & 0xff);
+  printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom_get_prg_memory (rom, 0) & 0xff
+                                                   , rom_get_prg_memory (rom, 1) & 0xff
+                                                   , rom_get_prg_memory (rom, 2) & 0xff
+                                                   , rom_get_prg_memory (rom, 3) & 0xff
+                                                   , rom_get_prg_memory (rom, 4) & 0xff
+                                                   , rom_get_prg_memory (rom, 5) & 0xff
+                                                   , rom_get_prg_memory (rom, 6) & 0xff
+                                                   , rom_get_prg_memory (rom, 7) & 0xff);
   printf ("\trom->prg end\n");
-  printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom->prg[sizeof (BYTE) * 16 * 1024 * rom->prg_page_count - 8] & 0xff
-                               , rom->prg[sizeof (BYTE) * 16 * 1024 * rom->prg_page_count - 7] & 0xff
-                               , rom->prg[sizeof (BYTE) * 16 * 1024 * rom->prg_page_count - 6] & 0xff
-                               , rom->prg[sizeof (BYTE) * 16 * 1024 * rom->prg_page_count - 5] & 0xff
-                               , rom->prg[sizeof (BYTE) * 16 * 1024 * rom->prg_page_count - 4] & 0xff
-                               , rom->prg[sizeof (BYTE) * 16 * 1024 * rom->prg_page_count - 3] & 0xff
-                               , rom->prg[sizeof (BYTE) * 16 * 1024 * rom->prg_page_count - 2] & 0xff
-                               , rom->prg[sizeof (BYTE) * 16 * 1024 * rom->prg_page_count - 1] & 0xff);
-  printf ("\trom->chr start\n");
+  printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom_get_prg_memory (rom, rom_get_prg_size (rom) - 8) & 0xff
+                                                   , rom_get_prg_memory (rom, rom_get_prg_size (rom) - 7) & 0xff
+                                                   , rom_get_prg_memory (rom, rom_get_prg_size (rom) - 6) & 0xff
+                                                   , rom_get_prg_memory (rom, rom_get_prg_size (rom) - 5) & 0xff
+                                                   , rom_get_prg_memory (rom, rom_get_prg_size (rom) - 4) & 0xff
+                                                   , rom_get_prg_memory (rom, rom_get_prg_size (rom) - 3) & 0xff
+                                                   , rom_get_prg_memory (rom, rom_get_prg_size (rom) - 2) & 0xff
+                                                   , rom_get_prg_memory (rom, rom_get_prg_size (rom) - 1) & 0xff);
+  /*printf ("\trom->chr start\n");
   printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom->chr[0] & 0xff
                                , rom->chr[1] & 0xff
                                , rom->chr[2] & 0xff
@@ -58,7 +59,7 @@ main () {
                                , rom->chr[sizeof (BYTE) * 8 * 1024 * rom->chr_page_count - 4] & 0xff
                                , rom->chr[sizeof (BYTE) * 8 * 1024 * rom->chr_page_count - 3] & 0xff
                                , rom->chr[sizeof (BYTE) * 8 * 1024 * rom->chr_page_count - 2] & 0xff
-                               , rom->chr[sizeof (BYTE) * 8 * 1024 * rom->chr_page_count - 1] & 0xff);
+                               , rom->chr[sizeof (BYTE) * 8 * 1024 * rom->chr_page_count - 1] & 0xff);*/
 
 
   printf ("Load RomNES END\n");
@@ -69,15 +70,7 @@ main () {
 
   cpu = cpu_new ();
   cpu_set_mapper (cpu, mapper);
-  cpu_load_rom (cpu, rom);
-  /*cpu_step (cpu);
-  cpu_step (cpu);
-  cpu_step (cpu);
-  cpu_step (cpu);
-  cpu_step (cpu);
-  cpu_step (cpu);
-  cpu_step (cpu);
-  cpu_step (cpu);*/
+  cpu_set_rom (cpu, rom);
 
   printf ("cpu->mem->[0x0000] = %02x\n", cpu_get_memory (cpu, 0x0000));
   cpu_set_memory (cpu, 0x0000, 0x48);

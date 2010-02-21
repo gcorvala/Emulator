@@ -6,6 +6,18 @@
 #include <stdio.h>
 #include <unistd.h>
 
+struct _Rom {
+  BYTE prg_n_pages;
+  BYTE chr_n_pages;
+  BYTE *prg;
+  BYTE *chr;
+  int mirroring : 1;
+  int sram : 1;
+  int trainer : 1;
+  int four_screen : 1;
+  BYTE mapper_id;
+};
+
 Rom *
 rom_new (const char *filename) {
   Rom *rom;
@@ -35,16 +47,15 @@ rom_new (const char *filename) {
     return NULL;
   }
 
-  rom->prg_page_count = header[4];
-  rom->chr_page_count = header[5];
+  rom->prg_n_pages = header[4];
+  rom->chr_n_pages = header[5];
 
-  printf ("rom control byte 1 : %02x \n", header[6]);
-  printf ("rom control byte 2 : %02x \n", header[7]);
+  rom->mapper_id = (header[6] >> 4) | (header[7] & 0xf0);
 
-  rom->prg = malloc (sizeof (BYTE) * 16 * 1024 * rom->prg_page_count);
-  rom->chr = malloc (sizeof (BYTE) * 8 * 1024 * rom->chr_page_count);
+  rom->prg = malloc (rom_get_prg_size (rom));
+  rom->chr = malloc (rom_get_chr_size (rom));
 
-  if (read (rom_fd, rom->prg, sizeof (BYTE) * 16 * 1024 * rom->prg_page_count) != sizeof (BYTE) * 16 * 1024 * rom->prg_page_count) {
+  if (read (rom_fd, rom->prg, rom_get_prg_size (rom)) != rom_get_prg_size (rom)) {
     perror ("prg read");
     close (rom_fd);
     free (rom->prg);
@@ -53,7 +64,7 @@ rom_new (const char *filename) {
     return NULL;
   }
 
-  if (read (rom_fd, rom->chr, sizeof (BYTE) * 8 * 1024 * rom->chr_page_count) != sizeof (BYTE) * 8 * 1024 * rom->chr_page_count) {
+  if (read (rom_fd, rom->chr, rom_get_chr_size (rom)) != rom_get_chr_size (rom)) {
     perror ("chr read");
     close (rom_fd);
     free (rom->prg);
@@ -70,4 +81,39 @@ rom_new (const char *filename) {
 void
 rom_free (Rom *rom) {
   
+}
+
+BYTE
+rom_get_prg_memory (Rom *rom, ADDR addr) {
+  return *(rom->prg + addr);
+}
+
+BYTE
+rom_get_prg_n_pages (Rom *rom) {
+  return rom->prg_n_pages;
+}
+
+size_t
+rom_get_prg_size (Rom *rom) {
+  return 16 * 1024 * rom->prg_n_pages;
+}
+
+BYTE
+rom_get_chr_memory (Rom *rom, ADDR addr) {
+  return *(rom->chr + addr);
+}
+
+BYTE
+rom_get_chr_n_pages (Rom *rom) {
+  return rom->chr_n_pages;
+}
+
+size_t
+rom_get_chr_size (Rom *rom) {
+  return 8 * 1024 * rom->chr_n_pages;
+}
+
+short unsigned int
+rom_get_mapper_id (Rom *rom) {
+  return rom->mapper_id;
 }
