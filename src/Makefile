@@ -8,6 +8,9 @@ OBJECTS = cpu.o \
 
 BIN = main
 
+%.o: %.c %.h
+	$(CC) $< -c -o $@
+
 main: main.c $(OBJECTS)
 	$(CC) $< $(OBJECTS) -o $@
 
