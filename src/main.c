@@ -20,9 +20,9 @@ main () {
 
   rom = rom_new (ROM_FILENAME);
 
-  printf ("\tprg_n_pages = %d\n", rom_get_prg_n_pages (rom));
+  printf ("\tprg_n_pages = %u\n", rom_get_prg_n_pages (rom));
   printf ("\tprg_size = %zu KB\n", rom_get_prg_size (rom) / 1024);
-  printf ("\tchr_n_pages = %d\n", rom_get_chr_n_pages (rom));
+  printf ("\tchr_n_pages = %u\n", rom_get_chr_n_pages (rom));
   printf ("\tchr_size = %zu KB\n", rom_get_chr_size (rom) / 1024);
   printf ("\tmirroring_flag = %d\n", rom_get_mirroring_flag (rom));
   printf ("\tsram_flag = %d\n", rom_get_sram_flag (rom));
@@ -97,7 +97,8 @@ main () {
   printf ("Load CPU END\n");
 
   rom_free (rom);
-  //cpu_free (cpu);
+  mapper_free (mapper);
+  cpu_free (cpu);
 
   printf ("Emulator END\n");
 

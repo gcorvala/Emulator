@@ -12,6 +12,7 @@ typedef struct {
 } Mapper;
 
 Mapper * mapper_new (Rom *rom);
+void     mapper_free (Mapper *mapper);
 BYTE     mapper_get_memory (Mapper *mapper, ADDR16 addr);
 void     mapper_set_memory (Mapper *mapper, ADDR16 addr);
 

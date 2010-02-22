@@ -14,6 +14,12 @@ mapper_new (Rom *rom) {
   return mapper;
 }
 
+void
+mapper_free (Mapper *mapper) {
+  free (mapper);
+}
+
+
 BYTE
 mapper_get_memory (Mapper *mapper, ADDR16 addr) {
   BYTE value = 0;

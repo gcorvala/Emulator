@@ -7,15 +7,15 @@
 #include <unistd.h>
 
 struct _Rom {
-  BYTE prg_n_pages;
-  BYTE chr_n_pages;
+  unsigned int prg_n_pages;
+  unsigned int chr_n_pages;
   BYTE *prg;
   BYTE *chr;
   int mirroring_flag : 1;
   int sram_flag : 1;
   int trainer_flag : 1;
   int four_screen_flag : 1;
-  BYTE mapper_id;
+  unsigned short int mapper_id;
 };
 
 Rom *
@@ -36,14 +36,14 @@ rom_new (const char *filename) {
   if (read (rom_fd, &header, 16) == 0) {
     perror ("rom read");
     close (rom_fd);
-    free (rom);
+    rom_free (rom);
     return NULL;
   }
 
   if (header[0] != 'N' || header[1] != 'E' || header[2] != 'S' || header[3] != 0x1A) {
     printf ("ERROR - INCORRECT ROM FORMAT!\n");
     close (rom_fd);
-    free (rom);
+    rom_free (rom);
     return NULL;
   }
 
@@ -58,23 +58,20 @@ rom_new (const char *filename) {
   rom->mapper_id = (header[6] >> 4) | (header[7] & 0xf0);
 
   rom->prg = malloc (rom_get_prg_size (rom));
-  rom->chr = malloc (rom_get_chr_size (rom));
 
   if (read (rom_fd, rom->prg, rom_get_prg_size (rom)) != rom_get_prg_size (rom)) {
     perror ("prg read");
     close (rom_fd);
-    free (rom->prg);
-    free (rom->chr);
-    free (rom);
+    rom_free (rom);
     return NULL;
   }
+
+  rom->chr = malloc (rom_get_chr_size (rom));
 
   if (read (rom_fd, rom->chr, rom_get_chr_size (rom)) != rom_get_chr_size (rom)) {
     perror ("chr read");
     close (rom_fd);
-    free (rom->prg);
-    free (rom->chr);
-    free (rom);
+    rom_free (rom);
     return NULL;
   }
 
@@ -85,7 +82,13 @@ rom_new (const char *filename) {
 
 void
 rom_free (Rom *rom) {
-  
+  if (rom->prg) {
+    free (rom->prg);
+  }
+  if (rom->chr) {
+    free (rom->chr);
+  }
+  free (rom);
 }
 
 BYTE
@@ -93,7 +96,7 @@ rom_get_prg_memory (Rom *rom, ADDR16 addr) {
   return *(rom->prg + addr);
 }
 
-BYTE
+unsigned int
 rom_get_prg_n_pages (Rom *rom) {
   return rom->prg_n_pages;
 }
@@ -108,7 +111,7 @@ rom_get_chr_memory (Rom *rom, ADDR16 addr) {
   return *(rom->chr + addr);
 }
 
-BYTE
+unsigned int
 rom_get_chr_n_pages (Rom *rom) {
   return rom->chr_n_pages;
 }
@@ -138,7 +141,7 @@ rom_get_four_screen_flag (Rom *rom) {
   return rom->four_screen_flag;
 }
 
-short unsigned int
+unsigned short int
 rom_get_mapper_id (Rom *rom) {
   return rom->mapper_id;
 }
