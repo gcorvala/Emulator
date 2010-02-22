@@ -74,25 +74,35 @@ main () {
   mapper = mapper_new (rom);
 
   cpu = cpu_new ();
-  /*cpu_set_mapper (cpu, mapper);
+  cpu_set_mapper (cpu, mapper);
   cpu_set_rom (cpu, rom);
 
-  printf ("cpu->mem->[0x0000] = %02x\n", cpu_get_memory (cpu, 0x0000));
+  /*printf ("\tcpu->mem->[0x0000] = %02x\n", cpu_get_memory (cpu, 0x0000) & 0xff);
   cpu_set_memory (cpu, 0x0000, 0x48);
-  printf ("cpu->mem->[0x0000] = %02x\n", cpu_get_memory (cpu, 0x0000));
-  printf ("cpu->mem->[0x1000] = %02x\n", cpu_get_memory (cpu, 0x1000));
+  printf ("\tcpu->mem->[0x0000] = %02x\n", cpu_get_memory (cpu, 0x0000) & 0xff);
+  printf ("\tcpu->mem->[0x1000] = %02x\n", cpu_get_memory (cpu, 0x1000) & 0xff);
   cpu_set_memory (cpu, 0x1600, 0x96);
-  printf ("cpu->mem->[0x1600] = %02x\n", cpu_get_memory (cpu, 0x1600));
-  printf ("cpu->mem->[0x0600] = %02x\n", cpu_get_memory (cpu, 0x0600));
+  printf ("\tcpu->mem->[0x1600] = %02x\n", cpu_get_memory (cpu, 0x1600) & 0xff);
+  printf ("\tcpu->mem->[0x0600] = %02x\n", cpu_get_memory (cpu, 0x0600) & 0xff);*/
 
   ADDR16 addr;
+  printf ("\tcpu->prg start\n\t\t");
   for (addr = 0x8000; addr != 0x8008; ++addr) {
-    printf ("\tcpu->mem->[0x%04x] = %02x\n", addr, cpu_get_memory (cpu, addr) & 0xff);
+    if (addr == 0x8004) {
+      printf (" ");
+    }
+    printf ("%02x", cpu_get_memory (cpu, addr) & 0xff);
   }
+  printf ("\n");
 
+  printf ("\tcpu->prg end\n\t\t");
   for (addr = 0xFFF8; addr != 0x0000; ++addr) {
-    printf ("\tcpu->mem->[0x%04x] = %02x\n", addr, cpu_get_memory (cpu, addr) & 0xff);
-  }*/
+    if (addr == 0xFFFC) {
+      printf (" ");
+    }
+    printf ("%02x", cpu_get_memory (cpu, addr) & 0xff);
+  }
+  printf ("\n");
 
   printf ("Load CPU END\n");
 
