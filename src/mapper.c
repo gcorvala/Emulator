@@ -15,14 +15,14 @@ mapper_new (Rom *rom) {
 }
 
 BYTE
-mapper_get_memory (Mapper *mapper, ADDR addr) {
+mapper_get_memory (Mapper *mapper, ADDR16 addr) {
   BYTE value = 0;
 
   if (addr < 0x8000) {
     printf ("\tmapper_get_memory at %04x is not allowed !\n", addr);
   }
   else if (addr >= 0x8000) {
-    ADDR real_addr;
+    ADDR16 real_addr;
 
     real_addr = addr % 0x8000;
     //printf ("\tmapper_get_memory at %04x is a real_address %p\n", addr, mapper->rom->prg + real_addr);

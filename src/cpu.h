@@ -13,8 +13,8 @@ void     cpu_set_rom    (CPU *cpu, Rom *rom);
 Rom *    cpu_get_rom    (CPU *cpu);
 void     cpu_set_mapper (CPU *cpu, Mapper *mapper);
 Mapper * cpu_get_mapper (CPU *cpu);
-void     cpu_set_memory (CPU *cpu, ADDR addr, BYTE value);
-BYTE     cpu_get_memory (CPU *cpu, ADDR addr);
+void     cpu_set_memory (CPU *cpu, ADDR16 addr, BYTE value);
+BYTE     cpu_get_memory (CPU *cpu, ADDR16 addr);
 
 void     cpu_step       (CPU *cpu);
 

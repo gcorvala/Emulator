@@ -11,10 +11,10 @@ struct _Rom {
   BYTE chr_n_pages;
   BYTE *prg;
   BYTE *chr;
-  int mirroring : 1;
-  int sram : 1;
-  int trainer : 1;
-  int four_screen : 1;
+  int mirroring_flag : 1;
+  int sram_flag : 1;
+  int trainer_flag : 1;
+  int four_screen_flag : 1;
   BYTE mapper_id;
 };
 
@@ -50,6 +50,11 @@ rom_new (const char *filename) {
   rom->prg_n_pages = header[4];
   rom->chr_n_pages = header[5];
 
+  rom->mirroring_flag = header[6] & 0x01;
+  rom->sram_flag = (header[6] & 0x02) >> 1;
+  rom->trainer_flag = (header[6] & 0x04) >> 2;
+  rom->four_screen_flag = (header[6] & 0x08) >> 3;
+
   rom->mapper_id = (header[6] >> 4) | (header[7] & 0xf0);
 
   rom->prg = malloc (rom_get_prg_size (rom));
@@ -84,7 +89,7 @@ rom_free (Rom *rom) {
 }
 
 BYTE
-rom_get_prg_memory (Rom *rom, ADDR addr) {
+rom_get_prg_memory (Rom *rom, ADDR16 addr) {
   return *(rom->prg + addr);
 }
 
@@ -99,7 +104,7 @@ rom_get_prg_size (Rom *rom) {
 }
 
 BYTE
-rom_get_chr_memory (Rom *rom, ADDR addr) {
+rom_get_chr_memory (Rom *rom, ADDR16 addr) {
   return *(rom->chr + addr);
 }
 
@@ -111,6 +116,26 @@ rom_get_chr_n_pages (Rom *rom) {
 size_t
 rom_get_chr_size (Rom *rom) {
   return 8 * 1024 * rom->chr_n_pages;
+}
+
+int
+rom_get_mirroring_flag (Rom *rom) {
+  return rom->mirroring_flag;
+}
+
+int
+rom_get_sram_flag (Rom *rom) {
+  return rom->sram_flag;
+}
+
+int
+rom_get_trainer_flag (Rom *rom) {
+  return rom->trainer_flag;
+}
+
+int
+rom_get_four_screen_flag (Rom *rom) {
+  return rom->four_screen_flag;
 }
 
 short unsigned int
