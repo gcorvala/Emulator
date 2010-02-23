@@ -104,6 +104,11 @@ main () {
   }
   printf ("\n");
 
+  int i;
+  for (i = 0; i < 0xff; ++i) {
+    cpu_step (cpu);
+  }
+
   printf ("Load CPU END\n");
 
   rom_free (rom);

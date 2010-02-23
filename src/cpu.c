@@ -20,14 +20,53 @@ struct _CPU {
   Mapper *mapper;
 };
 
-enum {
+const struct {
+  char *name;
+  unsigned int cycle;
+} OpCodes[] = {
+  { "BRK", 7 }, // 0x00
+  { "ORA", 1 }, // 0x01
+  { "?", 1 }, // 0x02
+  { "?", 1 }, // 0x03
+  { "?", 1 }, // 0x04
+  { "ORA", 1 }, // 0x05
+  { "ASL", 1 }, // 0x06
+  { "?", 1 }, // 0x07
+  { "PHP", 1 }, // 0x08
+  { "ORA", 1 }, // 0x09
+  { "ASL", 1 }, // 0x0A
+  { "?", 1 }, // 0x0B
+  { "?", 1 }, // 0x0C
+  { "ORA", 1 }, // 0x0D
+  { "ASL", 1 }, // 0x0E
+  { "?", 1 }, // 0x0F
+  { "BPL", 7 }, // 0x10
+  { "ORA", 1 }, // 0x11
+  { "?", 1 }, // 0x12
+  { "?", 1 }, // 0x13
+  { "?", 1 }, // 0x14
+  { "ORA", 1 }, // 0x15
+  { "ASL", 1 }, // 0x16
+  { "?", 1 }, // 0x17
+  { "CLC", 1 }, // 0x18
+  { "ORA", 1 }, // 0x19
+  { "?", 1 }, // 0x1A
+  { "?", 1 }, // 0x1B
+  { "?", 1 }, // 0x1C
+  { "ORA", 1 }, // 0x1D
+  { "ASL", 1 }, // 0x1E
+  { "?", 1 }, // 0x1F
+};
+
+
+/*enum {
   OP_2A03_LDX_I   = 0xa2,
   OP_2A03_LDA_I   = 0xa9,
   OP_2A03_SEI     = 0x78,
   OP_2A03_STA_A   = 0x8d,
   OP_2A03_CLD     = 0xd8,
   OP_2A03_DEFAULT = 0x00
-} OpCodes;
+} OpCodes;*/
 
 BYTE
 cpu_get_memory (CPU *cpu, ADDR16 addr) {
@@ -99,8 +138,15 @@ cpu_set_mapper (CPU *cpu, Mapper *mapper) {
 
 void
 cpu_step (CPU *cpu) {
-  printf ("\tcpu_step : [opcode] %02x\n", rom_get_prg_memory (cpu->rom, cpu->reg_sp) & 0xff);
-  switch (rom_get_prg_memory (cpu->rom, cpu->reg_sp) & 0xff) {
+  INT8 opcode;
+
+  opcode = rom_get_prg_memory (cpu->rom, cpu->reg_ip);
+
+  printf ("\tcpu_step : [opcode] %02x\n", opcode & 0xff);
+  if ((opcode & 0xff) < 0x20) {
+    printf ("\t\tcpu_step : %s\n", OpCodes[(int) opcode].name);
+  }
+  /*switch (rom_get_prg_memory (cpu->rom, cpu->reg_sp) & 0xff) {
     case OP_2A03_LDX_I:
       cpu->reg_x = rom_get_prg_memory (cpu->rom, cpu->reg_sp++);
       break;
@@ -119,6 +165,6 @@ cpu_step (CPU *cpu) {
     default:
       printf ("\t\t not yet implemented!\n");
       break;
-  }
-  cpu->reg_sp++;
+  }*/
+  cpu->reg_ip++;
 }
