@@ -8,5 +8,9 @@ typedef unsigned char UINT8;
 typedef unsigned short ADDR16;
 typedef unsigned char REG8;
 typedef unsigned short REG16;
+typedef int BOOL;
+
+#define FALSE (0)
+#define TRUE  (!FALSE)
 
 #endif
