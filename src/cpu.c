@@ -9,7 +9,7 @@ struct _CPU {
   REG8 reg_x;
   REG8 reg_y;
   REG8 reg_status;
-  REG8 reg_sp;
+  REG8 reg_sp; // $0100-$01FF
   REG16 reg_ip;
   BYTE ram[0x0800]; // 2KB
   Rom *rom;
@@ -22,7 +22,7 @@ cpu_new (void) {
 
   cpu = calloc (sizeof (CPU), 1);
 
-  cpu->reg_sp = 0x00FF;
+  cpu->reg_sp = 0xFF;
 
   return cpu;
 }
@@ -96,12 +96,14 @@ cpu_get_memory (CPU *cpu, ADDR16 addr) {
 
 void
 cpu_push (CPU *cpu, BYTE value) {
-
+  cpu_set_memory (cpu, 0x0100 | cpu->reg_sp, value);
+  cpu->reg_sp--;
 }
 
 BYTE
 cpu_pop (CPU *cpu) {
-  return 0;
+  return cpu_get_memory (cpu, 0x0100 | cpu->reg_sp);
+  cpu->reg_sp++;
 }
 
 BOOL
@@ -203,31 +205,31 @@ const struct {
   { "?", 1, cpu_exec_null }, // 0x04
   { "ORA", 1, cpu_exec_null }, // 0x05
   { "ASL", 1, cpu_exec_null }, // 0x06
-  { "?", 1 }, // 0x07
-  { "PHP", 1 }, // 0x08
-  { "ORA", 1 }, // 0x09
-  { "ASL", 1 }, // 0x0A
-  { "?", 1 }, // 0x0B
-  { "?", 1 }, // 0x0C
-  { "ORA", 1 }, // 0x0D
-  { "ASL", 1 }, // 0x0E
-  { "?", 1 }, // 0x0F
-  { "BPL", 7 }, // 0x10
-  { "ORA", 1 }, // 0x11
-  { "?", 1 }, // 0x12
-  { "?", 1 }, // 0x13
-  { "?", 1 }, // 0x14
-  { "ORA", 1 }, // 0x15
-  { "ASL", 1 }, // 0x16
-  { "?", 1 }, // 0x17
-  { "CLC", 1 }, // 0x18
-  { "ORA", 1 }, // 0x19
-  { "?", 1 }, // 0x1A
-  { "?", 1 }, // 0x1B
-  { "?", 1 }, // 0x1C
-  { "ORA", 1 }, // 0x1D
-  { "ASL", 1 }, // 0x1E
-  { "?", 1 }, // 0x1F
+  { "?", 1, cpu_exec_null }, // 0x07
+  { "PHP", 1, cpu_exec_null }, // 0x08
+  { "ORA", 1, cpu_exec_null }, // 0x09
+  { "ASL", 1, cpu_exec_null }, // 0x0A
+  { "?", 1, cpu_exec_null }, // 0x0B
+  { "?", 1, cpu_exec_null }, // 0x0C
+  { "ORA", 1, cpu_exec_null }, // 0x0D
+  { "ASL", 1, cpu_exec_null }, // 0x0E
+  { "?", 1, cpu_exec_null }, // 0x0F
+  { "BPL", 7, cpu_exec_null }, // 0x10
+  { "ORA", 1, cpu_exec_null }, // 0x11
+  { "?", 1, cpu_exec_null }, // 0x12
+  { "?", 1, cpu_exec_null }, // 0x13
+  { "?", 1, cpu_exec_null }, // 0x14
+  { "ORA", 1, cpu_exec_null }, // 0x15
+  { "ASL", 1, cpu_exec_null }, // 0x16
+  { "?", 1, cpu_exec_null }, // 0x17
+  { "CLC", 1, cpu_exec_null }, // 0x18
+  { "ORA", 1, cpu_exec_null }, // 0x19
+  { "?", 1, cpu_exec_null }, // 0x1A
+  { "?", 1, cpu_exec_null }, // 0x1B
+  { "?", 1, cpu_exec_null }, // 0x1C
+  { "ORA", 1, cpu_exec_null }, // 0x1D
+  { "ASL", 1, cpu_exec_null }, // 0x1E
+  { "?", 1, cpu_exec_null }, // 0x1F
 };
 
 void
@@ -239,9 +241,8 @@ cpu_step (CPU *cpu) {
   printf ("\tcpu_step : [opcode] %02x\n", opcode & 0xff);
   if ((opcode & 0xff) < 0x20) {
     printf ("\t\tcpu_step : %s\n", OpCodes[(int) opcode].name);
-  }
-  if ((opcode & 0xff) == 0x00)
     OpCodes[(int) opcode].func (cpu);
+  }
   /*switch (rom_get_prg_memory (cpu->rom, cpu->reg_sp) & 0xff) {
     case OP_2A03_LDX_I:
       cpu->reg_x = rom_get_prg_memory (cpu->rom, cpu->reg_sp++);
