@@ -12,5 +12,6 @@ typedef int BOOL;
 
 #define FALSE (0)
 #define TRUE  (!FALSE)
+#define FUNC  __PRETTY_FUNCTION__
 
 #endif

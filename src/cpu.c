@@ -240,38 +240,38 @@ const struct {
 } OpCodes[256] = {
   // 0x00 - 0x1F OK
   { "BRK", 7, cpu_exec_brk, 1 }, // 0x00
-  { "ORA", 1, cpu_exec_null, 1 }, // 0x01
-  { "?", 1, cpu_exec_null, 1 }, // 0x02
-  { "?", 1, cpu_exec_null, 1 }, // 0x03
-  { "?", 1, cpu_exec_null, 1 }, // 0x04
-  { "ORA", 1, cpu_exec_null, 1 }, // 0x05
-  { "ASL", 1, cpu_exec_null, 1 }, // 0x06
-  { "?", 1, cpu_exec_null, 1 }, // 0x07
-  { "PHP", 1, cpu_exec_null, 1 }, // 0x08
-  { "ORA", 1, cpu_exec_null, 1 }, // 0x09
-  { "ASL", 1, cpu_exec_null, 1 }, // 0x0A
-  { "?", 1, cpu_exec_null, 1 }, // 0x0B
-  { "?", 1, cpu_exec_null, 1 }, // 0x0C
-  { "ORA", 1, cpu_exec_null, 1 }, // 0x0D
-  { "ASL", 1, cpu_exec_null, 1 }, // 0x0E
-  { "?", 1, cpu_exec_null, 1 }, // 0x0F
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
   // 0x10
-  { "BPL", 7, cpu_exec_null, 1 }, // 0x00
-  { "ORA", 1, cpu_exec_null, 1 }, // 0x01
-  { "?", 1, cpu_exec_null, 1 }, // 0x02
-  { "?", 1, cpu_exec_null, 1 }, // 0x03
-  { "?", 1, cpu_exec_null, 1 }, // 0x04
-  { "ORA", 1, cpu_exec_null, 1 }, // 0x05
-  { "ASL", 1, cpu_exec_null, 1 }, // 0x06
-  { "?", 1, cpu_exec_null, 1 }, // 0x07
-  { "CLC", 1, cpu_exec_null, 1 }, // 0x08
-  { "ORA", 1, cpu_exec_null, 1 }, // 0x09
-  { "?", 1, cpu_exec_null, 1 }, // 0x0A
-  { "?", 1, cpu_exec_null, 1 }, // 0x0B
-  { "?", 1, cpu_exec_null, 1 }, // 0x0C
-  { "ORA", 1, cpu_exec_null, 1 }, // 0x0D
-  { "ASL", 1, cpu_exec_null, 1 }, // 0x0E
-  { "?", 1, cpu_exec_null, 1 }, // 0x0F
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
   // 0x20
   { "-", 1, cpu_exec_null, 1 }, // 0x00
   { "-", 1, cpu_exec_null, 1 }, // 0x01
@@ -518,31 +518,10 @@ cpu_step (CPU *cpu) {
 
   opcode = rom_get_prg_memory (cpu->rom, cpu->reg_ip);
 
-  printf ("\tcpu_step : [opcode] %02x\n", opcode & 0xff);
+  printf ("\t%s : [opcode] %02x\n", FUNC, opcode & 0xff);
   if ((opcode & 0xff) < 0xff) {
-    printf ("\t\tcpu_step : %s\n", OpCodes[opcode & 0xff].name);
+    printf ("\t\t");
     OpCodes[opcode & 0xff].func (cpu);
     cpu->reg_ip += OpCodes[opcode & 0xff].bytes;
   }
-  /*switch (rom_get_prg_memory (cpu->rom, cpu->reg_sp) & 0xff) {
-    case OP_2A03_LDX_I:
-      cpu->reg_x = rom_get_prg_memory (cpu->rom, cpu->reg_sp++);
-      break;
-    case OP_2A03_LDA_I:
-      cpu->reg_a = rom_get_prg_memory (cpu->rom, cpu->reg_sp++);
-      break;
-    case OP_2A03_SEI:
-      cpu->interrupt_disable_flag = 1;
-      break;
-    case OP_2A03_STA_A:
-      cpu->reg_sp += 2;
-      break;
-    case OP_2A03_CLD:
-      cpu->decimal_mode = 0;
-      break;
-    default:
-      printf ("\t\t not yet implemented!\n");
-      break;
-  }*/
-  //cpu->reg_ip++;
 }
