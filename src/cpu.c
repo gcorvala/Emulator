@@ -96,13 +96,13 @@ cpu_get_memory (CPU *cpu, ADDR16 addr) {
 
 void
 cpu_push (CPU *cpu, BYTE value) {
-  cpu_set_memory (cpu, 0x0100 | cpu->reg_sp, value);
+  cpu_set_memory (cpu, 0x0100 | (cpu->reg_sp & 0xff), value);
   cpu->reg_sp--;
 }
 
 BYTE
 cpu_pop (CPU *cpu) {
-  return cpu_get_memory (cpu, 0x0100 | cpu->reg_sp);
+  return cpu_get_memory (cpu, 0x0100 | (cpu->reg_sp & 0xff));
   cpu->reg_sp++;
 }
 
@@ -190,46 +190,326 @@ cpu_exec_brk (CPU *cpu) {
   cpu_set_break_flag (cpu, TRUE);
   cpu_push (cpu, cpu->reg_status);
   cpu_set_interrupt_disable_flag (cpu, TRUE);
+  //printf ("a%04xa\n", (cpu_get_memory (cpu, 0xFFFE) | (cpu_get_memory (cpu, 0xFFFF) << 8)) & 0xFFFF);
   //cpu->reg_ip = cpu_get_memory (cpu, 0xFFFE) | (cpu_get_memory (cpu, 0xFFFF) << 8);
+}
+
+void
+cpu_exec_cld (CPU *cpu) {
+  printf ("cpu_exec_cld\n");
+  cpu_set_decimal_flag (cpu, FALSE);
+}
+
+void
+cpu_exec_lda (CPU *cpu) {
+  printf ("cpu_exec_lda %02x\n", rom_get_prg_memory (cpu->rom, cpu->reg_ip + 1));
+  cpu->reg_a = rom_get_prg_memory (cpu->rom, cpu->reg_ip + 1);
+  cpu_set_zero_flag (cpu, cpu->reg_a == 0 ? TRUE : FALSE);
+  cpu_set_negative_flag (cpu, cpu->reg_a < 0 ? TRUE : FALSE);
+}
+
+void
+cpu_exec_ldx (CPU *cpu) {
+  printf ("cpu_exec_ldx\n");
+
+  cpu->reg_x = rom_get_prg_memory (cpu->rom, cpu->reg_ip + 1);
+  cpu_set_zero_flag (cpu, cpu->reg_x == 0 ? TRUE : FALSE);
+  cpu_set_negative_flag (cpu, cpu->reg_x < 0 ? TRUE : FALSE);
+}
+
+void
+cpu_exec_sei (CPU *cpu) {
+  printf ("cpu_exec_sei\n");
+  cpu_set_interrupt_disable_flag (cpu, TRUE);
+}
+
+void
+cpu_exec_sta (CPU *cpu) {
+  printf ("cpu_exec_sta\n");
+  ADDR16 addr;
+
+  addr = ((rom_get_prg_memory (cpu->rom, cpu->reg_ip + 1) << 8) & 0xFF) | (rom_get_prg_memory (cpu->rom, cpu->reg_ip + 2) & 0xFF);
+  cpu_set_memory (cpu, addr, cpu->reg_a);
 }
 
 const struct {
   char *name;
   unsigned int cycle;
   CPUExecOp func;
-} OpCodes[] = {
-  { "BRK", 7, cpu_exec_brk }, // 0x00
-  { "ORA", 1, cpu_exec_null }, // 0x01
-  { "?", 1, cpu_exec_null }, // 0x02
-  { "?", 1, cpu_exec_null }, // 0x03
-  { "?", 1, cpu_exec_null }, // 0x04
-  { "ORA", 1, cpu_exec_null }, // 0x05
-  { "ASL", 1, cpu_exec_null }, // 0x06
-  { "?", 1, cpu_exec_null }, // 0x07
-  { "PHP", 1, cpu_exec_null }, // 0x08
-  { "ORA", 1, cpu_exec_null }, // 0x09
-  { "ASL", 1, cpu_exec_null }, // 0x0A
-  { "?", 1, cpu_exec_null }, // 0x0B
-  { "?", 1, cpu_exec_null }, // 0x0C
-  { "ORA", 1, cpu_exec_null }, // 0x0D
-  { "ASL", 1, cpu_exec_null }, // 0x0E
-  { "?", 1, cpu_exec_null }, // 0x0F
-  { "BPL", 7, cpu_exec_null }, // 0x10
-  { "ORA", 1, cpu_exec_null }, // 0x11
-  { "?", 1, cpu_exec_null }, // 0x12
-  { "?", 1, cpu_exec_null }, // 0x13
-  { "?", 1, cpu_exec_null }, // 0x14
-  { "ORA", 1, cpu_exec_null }, // 0x15
-  { "ASL", 1, cpu_exec_null }, // 0x16
-  { "?", 1, cpu_exec_null }, // 0x17
-  { "CLC", 1, cpu_exec_null }, // 0x18
-  { "ORA", 1, cpu_exec_null }, // 0x19
-  { "?", 1, cpu_exec_null }, // 0x1A
-  { "?", 1, cpu_exec_null }, // 0x1B
-  { "?", 1, cpu_exec_null }, // 0x1C
-  { "ORA", 1, cpu_exec_null }, // 0x1D
-  { "ASL", 1, cpu_exec_null }, // 0x1E
-  { "?", 1, cpu_exec_null }, // 0x1F
+  unsigned int bytes;
+} OpCodes[256] = {
+  // 0x00 - 0x1F OK
+  { "BRK", 7, cpu_exec_brk, 1 }, // 0x00
+  { "ORA", 1, cpu_exec_null, 1 }, // 0x01
+  { "?", 1, cpu_exec_null, 1 }, // 0x02
+  { "?", 1, cpu_exec_null, 1 }, // 0x03
+  { "?", 1, cpu_exec_null, 1 }, // 0x04
+  { "ORA", 1, cpu_exec_null, 1 }, // 0x05
+  { "ASL", 1, cpu_exec_null, 1 }, // 0x06
+  { "?", 1, cpu_exec_null, 1 }, // 0x07
+  { "PHP", 1, cpu_exec_null, 1 }, // 0x08
+  { "ORA", 1, cpu_exec_null, 1 }, // 0x09
+  { "ASL", 1, cpu_exec_null, 1 }, // 0x0A
+  { "?", 1, cpu_exec_null, 1 }, // 0x0B
+  { "?", 1, cpu_exec_null, 1 }, // 0x0C
+  { "ORA", 1, cpu_exec_null, 1 }, // 0x0D
+  { "ASL", 1, cpu_exec_null, 1 }, // 0x0E
+  { "?", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0x10
+  { "BPL", 7, cpu_exec_null, 1 }, // 0x00
+  { "ORA", 1, cpu_exec_null, 1 }, // 0x01
+  { "?", 1, cpu_exec_null, 1 }, // 0x02
+  { "?", 1, cpu_exec_null, 1 }, // 0x03
+  { "?", 1, cpu_exec_null, 1 }, // 0x04
+  { "ORA", 1, cpu_exec_null, 1 }, // 0x05
+  { "ASL", 1, cpu_exec_null, 1 }, // 0x06
+  { "?", 1, cpu_exec_null, 1 }, // 0x07
+  { "CLC", 1, cpu_exec_null, 1 }, // 0x08
+  { "ORA", 1, cpu_exec_null, 1 }, // 0x09
+  { "?", 1, cpu_exec_null, 1 }, // 0x0A
+  { "?", 1, cpu_exec_null, 1 }, // 0x0B
+  { "?", 1, cpu_exec_null, 1 }, // 0x0C
+  { "ORA", 1, cpu_exec_null, 1 }, // 0x0D
+  { "ASL", 1, cpu_exec_null, 1 }, // 0x0E
+  { "?", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0x20
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0x30
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0x40
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0x50
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0x60
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0x70
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "SEI", 2, cpu_exec_sei, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0x80
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "STA", 2, cpu_exec_sta, 3 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0x90
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0xA0
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "LDX", 2, cpu_exec_ldx, 2 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "LDA", 2, cpu_exec_lda, 2 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0xB0
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0xC0
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0xD0
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "CLD", 2, cpu_exec_cld, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0xE0
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  // 0xF0
+  { "-", 1, cpu_exec_null, 1 }, // 0x00
+  { "-", 1, cpu_exec_null, 1 }, // 0x01
+  { "-", 1, cpu_exec_null, 1 }, // 0x02
+  { "-", 1, cpu_exec_null, 1 }, // 0x03
+  { "-", 1, cpu_exec_null, 1 }, // 0x04
+  { "-", 1, cpu_exec_null, 1 }, // 0x05
+  { "-", 1, cpu_exec_null, 1 }, // 0x06
+  { "-", 1, cpu_exec_null, 1 }, // 0x07
+  { "-", 1, cpu_exec_null, 1 }, // 0x08
+  { "-", 1, cpu_exec_null, 1 }, // 0x09
+  { "-", 1, cpu_exec_null, 1 }, // 0x0A
+  { "-", 1, cpu_exec_null, 1 }, // 0x0B
+  { "-", 1, cpu_exec_null, 1 }, // 0x0C
+  { "-", 1, cpu_exec_null, 1 }, // 0x0D
+  { "-", 1, cpu_exec_null, 1 }, // 0x0E
+  { "-", 1, cpu_exec_null, 1 }, // 0x0F
 };
 
 void
@@ -239,9 +519,10 @@ cpu_step (CPU *cpu) {
   opcode = rom_get_prg_memory (cpu->rom, cpu->reg_ip);
 
   printf ("\tcpu_step : [opcode] %02x\n", opcode & 0xff);
-  if ((opcode & 0xff) < 0x20) {
-    printf ("\t\tcpu_step : %s\n", OpCodes[(int) opcode].name);
-    OpCodes[(int) opcode].func (cpu);
+  if ((opcode & 0xff) < 0xff) {
+    printf ("\t\tcpu_step : %s\n", OpCodes[opcode & 0xff].name);
+    OpCodes[opcode & 0xff].func (cpu);
+    cpu->reg_ip += OpCodes[opcode & 0xff].bytes;
   }
   /*switch (rom_get_prg_memory (cpu->rom, cpu->reg_sp) & 0xff) {
     case OP_2A03_LDX_I:
@@ -263,5 +544,5 @@ cpu_step (CPU *cpu) {
       printf ("\t\t not yet implemented!\n");
       break;
   }*/
-  cpu->reg_ip++;
+  //cpu->reg_ip++;
 }
