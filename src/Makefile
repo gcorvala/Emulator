@@ -1,4 +1,4 @@
-CC = gcc -Wall
+CC = gcc -Wall -pedantic
 
 OBJECTS = cpu.o \
 	mapper.o \

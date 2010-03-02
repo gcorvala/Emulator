@@ -9,12 +9,26 @@ struct _CPU {
   REG8 reg_x;
   REG8 reg_y;
   REG8 reg_status;
-  REG8 reg_sp; // $0100-$01FF
+  REG8 reg_sp; /* $0100-$01FF */
   REG16 reg_ip;
-  BYTE ram[0x0800]; // 2KB
+  BYTE ram[0x0800]; /* 2KB */
   Rom *rom;
   Mapper *mapper;
 };
+
+typedef enum {
+  ADDR_MODE_IMMEDIATE,
+  ADDR_MODE_ABSOLUTE,
+  ADDR_MODE_ZERO_PAGE_ABSOLUTE,
+  ADDR_MODE_IMPLIED,
+  ADDR_MODE_ACCUMULATOR,
+  ADDR_MODE_INDEXED,
+  ADDR_MODE_ZERO_PAGE_INDEXED,
+  ADDR_MODE_INDIRECT,
+  ADDR_MODE_PRE_INDEXED_INDIRECT,
+  ADDR_MODE_POST_INDEXED_INDIRECT,
+  ADDR_MODE_RELATIVE
+} AddressingMode;
 
 CPU *
 cpu_new (void) {
@@ -22,7 +36,7 @@ cpu_new (void) {
 
   cpu = calloc (sizeof (CPU), 1);
 
-  cpu->reg_sp = 0xFF;
+  cpu->reg_sp = (REG8) 0xFF;
 
   return cpu;
 }
@@ -190,8 +204,8 @@ cpu_exec_brk (CPU *cpu) {
   cpu_set_break_flag (cpu, TRUE);
   cpu_push (cpu, cpu->reg_status);
   cpu_set_interrupt_disable_flag (cpu, TRUE);
-  //printf ("a%04xa\n", (cpu_get_memory (cpu, 0xFFFE) | (cpu_get_memory (cpu, 0xFFFF) << 8)) & 0xFFFF);
-  //cpu->reg_ip = cpu_get_memory (cpu, 0xFFFE) | (cpu_get_memory (cpu, 0xFFFF) << 8);
+  /*printf ("a%04xa\n", (cpu_get_memory (cpu, 0xFFFE) | (cpu_get_memory (cpu, 0xFFFF) << 8)) & 0xFFFF);
+  cpu->reg_ip = cpu_get_memory (cpu, 0xFFFE) | (cpu_get_memory (cpu, 0xFFFF) << 8); */
 }
 
 void
@@ -225,8 +239,9 @@ cpu_exec_sei (CPU *cpu) {
 
 void
 cpu_exec_sta (CPU *cpu) {
-  printf ("cpu_exec_sta\n");
   ADDR16 addr;
+
+  printf ("cpu_exec_sta\n");
 
   addr = ((rom_get_prg_memory (cpu->rom, cpu->reg_ip + 1) << 8) & 0xFF) | (rom_get_prg_memory (cpu->rom, cpu->reg_ip + 2) & 0xFF);
   cpu_set_memory (cpu, addr, cpu->reg_a);
@@ -237,279 +252,280 @@ const struct {
   unsigned int cycle;
   CPUExecOp func;
   unsigned int bytes;
+  AddressingMode mode;
 } OpCodes[256] = {
-  // 0x00 - 0x1F OK
-  { "BRK", 7, cpu_exec_brk, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0x10
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0x20
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0x30
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0x40
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0x50
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0x60
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0x70
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "SEI", 2, cpu_exec_sei, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0x80
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "STA", 2, cpu_exec_sta, 3 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0x90
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0xA0
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "LDX", 2, cpu_exec_ldx, 2 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "LDA", 2, cpu_exec_lda, 2 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0xB0
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0xC0
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0xD0
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "CLD", 2, cpu_exec_cld, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0xE0
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
-  // 0xF0
-  { "-", 1, cpu_exec_null, 1 }, // 0x00
-  { "-", 1, cpu_exec_null, 1 }, // 0x01
-  { "-", 1, cpu_exec_null, 1 }, // 0x02
-  { "-", 1, cpu_exec_null, 1 }, // 0x03
-  { "-", 1, cpu_exec_null, 1 }, // 0x04
-  { "-", 1, cpu_exec_null, 1 }, // 0x05
-  { "-", 1, cpu_exec_null, 1 }, // 0x06
-  { "-", 1, cpu_exec_null, 1 }, // 0x07
-  { "-", 1, cpu_exec_null, 1 }, // 0x08
-  { "-", 1, cpu_exec_null, 1 }, // 0x09
-  { "-", 1, cpu_exec_null, 1 }, // 0x0A
-  { "-", 1, cpu_exec_null, 1 }, // 0x0B
-  { "-", 1, cpu_exec_null, 1 }, // 0x0C
-  { "-", 1, cpu_exec_null, 1 }, // 0x0D
-  { "-", 1, cpu_exec_null, 1 }, // 0x0E
-  { "-", 1, cpu_exec_null, 1 }, // 0x0F
+  /* */
+  { "BRK", 7, cpu_exec_brk, 1, ADDR_MODE_IMPLIED }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "SEI", 2, cpu_exec_sei, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "STA", 2, cpu_exec_sta, 3 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "LDX", 2, cpu_exec_ldx, 2 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "LDA", 2, cpu_exec_lda, 2 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "CLD", 2, cpu_exec_cld, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
+  { "-", 1, cpu_exec_null, 1 }, /* */
 };
 
 void

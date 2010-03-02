@@ -13,6 +13,8 @@ main () {
   Rom *rom;
   CPU *cpu;
   Mapper *mapper;
+  ADDR16 addr;
+  int i;
 
   printf ("Emulator START\n");
 
@@ -85,7 +87,6 @@ main () {
   printf ("\tcpu->mem->[0x1600] = %02x\n", cpu_get_memory (cpu, 0x1600) & 0xff);
   printf ("\tcpu->mem->[0x0600] = %02x\n", cpu_get_memory (cpu, 0x0600) & 0xff);*/
 
-  ADDR16 addr;
   printf ("\tcpu->prg start\n\t\t");
   for (addr = 0x8000; addr != 0x8008; ++addr) {
     if (addr == 0x8004) {
@@ -104,7 +105,6 @@ main () {
   }
   printf ("\n");
 
-  int i;
   for (i = 0; i < 10; ++i) {
     cpu_step (cpu);
   }
