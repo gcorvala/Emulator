@@ -1,6 +1,6 @@
 CC = gcc -Wall -pedantic
 
-OBJECTS = cpu.o \
+OBJECTS = cpu_6502.o \
 	mapper.o \
 	papu.o \
 	ppu.o \
