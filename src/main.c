@@ -23,9 +23,9 @@ main () {
   rom = rom_new (ROM_FILENAME);
 
   printf ("\tprg_n_pages = %u\n", rom_get_prg_n_pages (rom));
-  printf ("\tprg_size = %zu KB\n", rom_get_prg_size (rom) / 1024);
+  printf ("\tprg_size = %lu KB\n", rom_get_prg_size (rom) / 1024);
   printf ("\tchr_n_pages = %u\n", rom_get_chr_n_pages (rom));
-  printf ("\tchr_size = %zu KB\n", rom_get_chr_size (rom) / 1024);
+  printf ("\tchr_size = %lu KB\n", rom_get_chr_size (rom) / 1024);
   printf ("\tmirroring_flag = %d\n", rom_get_mirroring_flag (rom));
   printf ("\tsram_flag = %d\n", rom_get_sram_flag (rom));
   printf ("\ttrainer_flag = %d\n", rom_get_trainer_flag (rom));
