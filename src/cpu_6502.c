@@ -12,7 +12,7 @@ struct _CPU6502 {
   REG8 reg_sp; /* $0100-$01FF */
   REG16 reg_ip;
   BYTE ram[0x0800]; /* 2KB */
-  Rom *rom;
+  RomNES *rom;
   Mapper *mapper;
 };
 
@@ -54,12 +54,12 @@ cpu_6502_free (CPU6502 *cpu) {
 }
 
 void
-cpu_6502_set_rom (CPU6502 *cpu, Rom *rom) {
+cpu_6502_set_rom (CPU6502 *cpu, RomNES *rom) {
   cpu->reg_ip = 0;
   cpu->rom = rom;
 }
 
-Rom *
+RomNES *
 cpu_6502_get_rom (CPU6502 *cpu) {
   return cpu->rom;
 }
@@ -223,8 +223,8 @@ cpu_6502_exec_cld (CPU6502 *cpu) {
 
 void
 cpu_6502_exec_lda (CPU6502 *cpu) {
-  printf ("cpu_6502_exec_lda %02x\n", rom_get_prg_memory (cpu->rom, cpu->reg_ip + 1));
-  cpu->reg_a = rom_get_prg_memory (cpu->rom, cpu->reg_ip + 1);
+  printf ("cpu_6502_exec_lda %02x\n", rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip + 1));
+  cpu->reg_a = rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip + 1);
   cpu_6502_set_zero_flag (cpu, cpu->reg_a == 0 ? TRUE : FALSE);
   cpu_6502_set_negative_flag (cpu, cpu->reg_a < 0 ? TRUE : FALSE);
 }
@@ -233,7 +233,7 @@ void
 cpu_6502_exec_ldx (CPU6502 *cpu) {
   printf ("cpu_6502_exec_ldx\n");
 
-  cpu->reg_x = rom_get_prg_memory (cpu->rom, cpu->reg_ip + 1);
+  cpu->reg_x = rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip + 1);
   cpu_6502_set_zero_flag (cpu, cpu->reg_x == 0 ? TRUE : FALSE);
   cpu_6502_set_negative_flag (cpu, cpu->reg_x < 0 ? TRUE : FALSE);
 }
@@ -250,7 +250,7 @@ cpu_6502_exec_sta (CPU6502 *cpu) {
 
   printf ("cpu_6502_exec_sta\n");
 
-  addr = ((rom_get_prg_memory (cpu->rom, cpu->reg_ip + 1) << 8) & 0xFF) | (rom_get_prg_memory (cpu->rom, cpu->reg_ip + 2) & 0xFF);
+  addr = ((rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip + 1) << 8) & 0xFF) | (rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip + 2) & 0xFF);
   cpu_6502_set_memory (cpu, addr, cpu->reg_a);
 }
 
@@ -539,7 +539,7 @@ void
 cpu_6502_step (CPU6502 *cpu) {
   INT8 opcode;
 
-  opcode = rom_get_prg_memory (cpu->rom, cpu->reg_ip);
+  opcode = rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip);
 
   printf ("\t%s : [opcode] %02x\n", FUNC, opcode & 0xff);
   if ((opcode & 0xff) < 0xff) {

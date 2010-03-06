@@ -1,4 +1,4 @@
-#include "rom.h"
+#include "rom_nes.h"
 
 #include <fcntl.h>
 #include <stddef.h>
@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-struct _Rom {
+struct _RomNES {
   unsigned int prg_n_pages;
   unsigned int chr_n_pages;
   BYTE *prg;
@@ -18,32 +18,32 @@ struct _Rom {
   unsigned short int mapper_id;
 };
 
-Rom *
-rom_new (const char *filename) {
-  Rom *rom;
+RomNES *
+rom_nes_new (const char *filename) {
+  RomNES *rom;
   BYTE header[16];
-  int rom_fd;
+  int rom_nes_fd;
 
-  rom_fd = open (filename, O_RDONLY);
+  rom_nes_fd = open (filename, O_RDONLY);
 
-  if (rom_fd == -1) {
-    perror ("rom_nes_new");
+  if (rom_nes_fd == -1) {
+    perror ("rom_nes_nes_new");
     return NULL;
   }
 
-  rom = calloc (sizeof (Rom), 1);
+  rom = calloc (sizeof (RomNES), 1);
 
-  if (read (rom_fd, &header, 16) == 0) {
+  if (read (rom_nes_fd, &header, 16) == 0) {
     perror ("rom read");
-    close (rom_fd);
-    rom_free (rom);
+    close (rom_nes_fd);
+    rom_nes_free (rom);
     return NULL;
   }
 
   if (header[0] != 'N' || header[1] != 'E' || header[2] != 'S' || header[3] != 0x1A) {
     printf ("ERROR - INCORRECT ROM FORMAT!\n");
-    close (rom_fd);
-    rom_free (rom);
+    close (rom_nes_fd);
+    rom_nes_free (rom);
     return NULL;
   }
 
@@ -57,31 +57,31 @@ rom_new (const char *filename) {
 
   rom->mapper_id = (header[6] >> 4) | (header[7] & 0xf0);
 
-  rom->prg = malloc (rom_get_prg_size (rom));
+  rom->prg = malloc (rom_nes_get_prg_size (rom));
 
-  if (read (rom_fd, rom->prg, rom_get_prg_size (rom)) != rom_get_prg_size (rom)) {
+  if (read (rom_nes_fd, rom->prg, rom_nes_get_prg_size (rom)) != rom_nes_get_prg_size (rom)) {
     perror ("prg read");
-    close (rom_fd);
-    rom_free (rom);
+    close (rom_nes_fd);
+    rom_nes_free (rom);
     return NULL;
   }
 
-  rom->chr = malloc (rom_get_chr_size (rom));
+  rom->chr = malloc (rom_nes_get_chr_size (rom));
 
-  if (read (rom_fd, rom->chr, rom_get_chr_size (rom)) != rom_get_chr_size (rom)) {
+  if (read (rom_nes_fd, rom->chr, rom_nes_get_chr_size (rom)) != rom_nes_get_chr_size (rom)) {
     perror ("chr read");
-    close (rom_fd);
-    rom_free (rom);
+    close (rom_nes_fd);
+    rom_nes_free (rom);
     return NULL;
   }
 
-  close (rom_fd);
+  close (rom_nes_fd);
 
   return rom;
 }
 
 void
-rom_free (Rom *rom) {
+rom_nes_free (RomNES *rom) {
   if (rom->prg) {
     free (rom->prg);
   }
@@ -92,56 +92,56 @@ rom_free (Rom *rom) {
 }
 
 BYTE
-rom_get_prg_memory (Rom *rom, ADDR16 addr) {
+rom_nes_get_prg_memory (RomNES *rom, ADDR16 addr) {
   return *(rom->prg + addr);
 }
 
 unsigned int
-rom_get_prg_n_pages (Rom *rom) {
+rom_nes_get_prg_n_pages (RomNES *rom) {
   return rom->prg_n_pages;
 }
 
 size_t
-rom_get_prg_size (Rom *rom) {
+rom_nes_get_prg_size (RomNES *rom) {
   return 16 * 1024 * rom->prg_n_pages;
 }
 
 BYTE
-rom_get_chr_memory (Rom *rom, ADDR16 addr) {
+rom_nes_get_chr_memory (RomNES *rom, ADDR16 addr) {
   return *(rom->chr + addr);
 }
 
 unsigned int
-rom_get_chr_n_pages (Rom *rom) {
+rom_nes_get_chr_n_pages (RomNES *rom) {
   return rom->chr_n_pages;
 }
 
 size_t
-rom_get_chr_size (Rom *rom) {
+rom_nes_get_chr_size (RomNES *rom) {
   return 8 * 1024 * rom->chr_n_pages;
 }
 
 int
-rom_get_mirroring_flag (Rom *rom) {
+rom_nes_get_mirroring_flag (RomNES *rom) {
   return rom->mirroring_flag;
 }
 
 int
-rom_get_sram_flag (Rom *rom) {
+rom_nes_get_sram_flag (RomNES *rom) {
   return rom->sram_flag;
 }
 
 int
-rom_get_trainer_flag (Rom *rom) {
+rom_nes_get_trainer_flag (RomNES *rom) {
   return rom->trainer_flag;
 }
 
 int
-rom_get_four_screen_flag (Rom *rom) {
+rom_nes_get_four_screen_flag (RomNES *rom) {
   return rom->four_screen_flag;
 }
 
 unsigned short int
-rom_get_mapper_id (Rom *rom) {
+rom_nes_get_mapper_id (RomNES *rom) {
   return rom->mapper_id;
 }

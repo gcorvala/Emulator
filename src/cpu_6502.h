@@ -2,15 +2,15 @@
 #define _CPU6502_H_
 
 #include "mapper.h"
-#include "rom.h"
+#include "rom_nes.h"
 #include "types.h"
 
 typedef struct _CPU6502 CPU6502;
 
 CPU6502 * cpu_6502_new                        (void);
 void      cpu_6502_free                       (CPU6502 *cpu);
-void      cpu_6502_set_rom                    (CPU6502 *cpu, Rom *rom);
-Rom *     cpu_6502_get_rom                    (CPU6502 *cpu);
+void      cpu_6502_set_rom                    (CPU6502 *cpu, RomNES *rom);
+RomNES *     cpu_6502_get_rom                    (CPU6502 *cpu);
 void      cpu_6502_set_mapper                 (CPU6502 *cpu, Mapper *mapper);
 Mapper *  cpu_6502_get_mapper                 (CPU6502 *cpu);
 void      cpu_6502_set_memory                 (CPU6502 *cpu, ADDR16 addr, BYTE value);
