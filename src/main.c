@@ -36,41 +36,41 @@ main () {
   printf ("\tmapper_id = %d\n", rom_nes_get_mapper_id (rom));
 
   printf ("\trom->prg start\n");
-  printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom_nes_get_prg_memory (rom, 0) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, 1) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, 2) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, 3) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, 4) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, 5) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, 6) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, 7) & 0xff);
+  printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom_nes_get_prg_memory (rom, 0) 
+                                                   , rom_nes_get_prg_memory (rom, 1) 
+                                                   , rom_nes_get_prg_memory (rom, 2) 
+                                                   , rom_nes_get_prg_memory (rom, 3) 
+                                                   , rom_nes_get_prg_memory (rom, 4) 
+                                                   , rom_nes_get_prg_memory (rom, 5) 
+                                                   , rom_nes_get_prg_memory (rom, 6) 
+                                                   , rom_nes_get_prg_memory (rom, 7));
   printf ("\trom->prg end\n");
-  printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 8) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 7) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 6) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 5) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 4) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 3) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 2) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 1) & 0xff);
+  printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 8) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 7) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 6) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 5) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 4) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 3) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 2) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 1));
   printf ("\trom->chr start\n");
-  printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom_nes_get_chr_memory (rom, 0) & 0xff
-                                                   , rom_nes_get_chr_memory (rom, 1) & 0xff
-                                                   , rom_nes_get_chr_memory (rom, 2) & 0xff
-                                                   , rom_nes_get_chr_memory (rom, 3) & 0xff
-                                                   , rom_nes_get_chr_memory (rom, 4) & 0xff
-                                                   , rom_nes_get_chr_memory (rom, 5) & 0xff
-                                                   , rom_nes_get_chr_memory (rom, 6) & 0xff
-                                                   , rom_nes_get_chr_memory (rom, 7) & 0xff);
+  printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom_nes_get_chr_memory (rom, 0) 
+                                                   , rom_nes_get_chr_memory (rom, 1) 
+                                                   , rom_nes_get_chr_memory (rom, 2) 
+                                                   , rom_nes_get_chr_memory (rom, 3) 
+                                                   , rom_nes_get_chr_memory (rom, 4) 
+                                                   , rom_nes_get_chr_memory (rom, 5) 
+                                                   , rom_nes_get_chr_memory (rom, 6) 
+                                                   , rom_nes_get_chr_memory (rom, 7));
   printf ("\trom->chr end\n");
-  printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 8) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 7) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 6) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 5) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 4) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 3) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 2) & 0xff
-                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 1) & 0xff);
+  printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 8) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 7) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 6) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 5) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 4) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 3) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 2) 
+                                                   , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 1));
 
   printf ("Load RomNES END\n");
 
@@ -87,7 +87,7 @@ main () {
     if (addr == 0x8004) {
       printf (" ");
     }
-    printf ("%02x", cpu_6502_get_memory (cpu, addr) & 0xff);
+    printf ("%02x", cpu_6502_get_memory (cpu, addr) );
   }
   printf ("\n");
 
@@ -96,7 +96,7 @@ main () {
     if (addr == 0xFFFC) {
       printf (" ");
     }
-    printf ("%02x", cpu_6502_get_memory (cpu, addr) & 0xff);
+    printf ("%02x", cpu_6502_get_memory (cpu, addr));
   }
   printf ("\n");
 
@@ -115,7 +115,15 @@ main () {
   rom_gb = rom_gb_new ("../data/gameboy.gb");
   rom_title = rom_gb_get_title (rom_gb);
   printf ("\trom title = %s\n", rom_title);
+  if (rom_gb_check_logo (rom_gb) == FALSE) {
+    printf ("\trom logo incorrect!\n");
+  }
+  else {
+    printf ("\trom logo correct!\n");
+  }
   free (rom_title);
+  printf ("\tram size = %lu KB\n", rom_gb_get_ram_size (rom_gb) / 1024);
+  printf ("\trom size = %lu KB\n", rom_gb_get_rom_size (rom_gb) / 1024);
   rom_gb_free (rom_gb);
 
   printf ("Load RomGB END\n");

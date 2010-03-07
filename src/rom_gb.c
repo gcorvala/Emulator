@@ -61,21 +61,20 @@ rom_gb_new (const char *filename) {
     return NULL;
   }
 
-  printf ("%s : %x %x %x %x\n", FUNC,
-                                rom->header.entry[0],
-                                rom->header.entry[1],
-                                rom->header.entry[2],
-                                rom->header.entry[3]);
-  printf ("%s : rom size = %u\n", FUNC, rom->header.rom_size);
-  printf ("%s : ram size = %u\n", FUNC, rom->header.ram_size);
-  printf ("%s : type = %u\n", FUNC, rom->header.type);
-
   return rom;
 }
 
 void
 rom_gb_free (RomGB *rom) {
   free (rom);
+}
+
+BOOL
+rom_gb_check_logo (RomGB *rom) {
+  if (memcmp (rom_gb_logo, rom->header.logo, 0x30))
+    return FALSE;
+  else
+    return TRUE;
 }
 
 char *
@@ -86,4 +85,40 @@ rom_gb_get_title (RomGB *rom) {
   memcpy (title, rom->header.title, 16);
 
   return title;
+}
+
+size_t
+rom_gb_get_rom_size (RomGB *rom) {
+  size_t size;
+
+  size = 32 << (rom->header.rom_size & 0x0f);
+  if (rom->header.rom_size & 0xf0)
+    size += 32 << (rom->header.rom_size & 0xf0);
+  size *= 1024;
+
+  return size;
+}
+
+size_t
+rom_gb_get_ram_size (RomGB *rom) {
+  size_t size;
+
+  if (rom->header.ram_size == 0)
+    size = 0;
+  else if (rom->header.ram_size == 1)
+    size = 2 * 1024;
+  else if (rom->header.ram_size == 2)
+    size = 8 * 1024;
+  else if (rom->header.ram_size == 3)
+    size = 32 * 1024;
+
+  return size;
+}
+
+BYTE *
+rom_gb_get_licence (RomGB *rom) {
+  if (rom->header.old_licence == 0x33)
+    return rom->header.new_licence;
+  else
+    return &(rom->header.old_licence);
 }
