@@ -6,23 +6,25 @@
 #include <unistd.h>
 #include <string.h>
 
+typedef struct {
+  BYTE entry[4];
+  BYTE logo[48];
+  BYTE title[16];
+  BYTE new_licence[2];
+  BYTE super_flag;
+  BYTE type;
+  BYTE rom_size;
+  BYTE ram_size;
+  BYTE destination;
+  BYTE old_licence;
+  BYTE version;
+  BYTE header_checksum;
+  BYTE global_checksum[2];
+} RomGBHeader;
+
 struct _RomGB {
-  struct {
-    BYTE entry[4];
-    BYTE logo[48];
-    BYTE title[16];
-    BYTE new_licence[2];
-    BYTE super_flag;
-    BYTE type;
-    BYTE rom_size;
-    BYTE ram_size;
-    BYTE destination;
-    BYTE old_licence;
-    BYTE version;
-    BYTE header_checksum;
-    BYTE global_checksum[2];
-  } header;
-  BYTE bank[32*1024];
+  RomGBHeader *header;
+  BYTE **banks;
 };
 
 const BYTE rom_gb_logo[0x30] = {
@@ -38,6 +40,8 @@ RomGB *
 rom_gb_new (const char *filename) {
   RomGB *rom;
   int rom_fd;
+  BYTE *bank0;
+  unsigned int nb_banks, i;
 
   rom_fd = open (filename, O_RDONLY);
 
@@ -48,45 +52,45 @@ rom_gb_new (const char *filename) {
 
   rom = calloc (sizeof (RomGB), 1);
 
-  if (lseek (rom_fd, 0x0100, SEEK_SET) == -1) {
-    perror ("seek");
-    close (rom_fd);
-    rom_gb_free (rom);
-    return NULL;
-  }
-
-  if (read (rom_fd, &(rom->header), 0x50) == 0) {
+  bank0 = calloc (sizeof (BYTE), 0x4000);
+  if (read (rom_fd, bank0, 0x4000) == 0) {
     perror ("rom read");
     close (rom_fd);
     rom_gb_free (rom);
     return NULL;
   }
 
-  if (lseek (rom_fd, 0x0000, SEEK_SET) == -1) {
-    perror ("seek");
-    close (rom_fd);
-    rom_gb_free (rom);
-    return NULL;
+  rom->header = (RomGBHeader *) (bank0 + 0x0100);
+  
+  nb_banks = rom_gb_get_rom_size (rom) / (1024 * 16);
+  rom->banks = calloc (sizeof (BYTE *), nb_banks);
+  rom->banks[0] = bank0;
+  for (i = 1; i < nb_banks; ++i) {
+    rom->banks[i] = calloc (sizeof (BYTE), 0x4000);
+    if (read (rom_fd, rom->banks[i], 0x4000) == 0) {
+      perror ("rom read");
+    };
   }
 
-  if (read (rom_fd, &(rom->bank), 0x150) == 0) {
-    perror ("rom read");
-    close (rom_fd);
-    rom_gb_free (rom);
-    return NULL;
-  }
+  close (rom_fd);
 
   return rom;
 }
 
 void
 rom_gb_free (RomGB *rom) {
+  unsigned int nb_banks, i;
+
+  nb_banks = rom_gb_get_rom_size (rom) / (1024 * 16);
+  for (i = 0; i < nb_banks; ++i) {
+    free (rom->banks[i]);
+  }
   free (rom);
 }
 
 BOOL
 rom_gb_check_logo (RomGB *rom) {
-  if (memcmp (rom_gb_logo, rom->header.logo, 0x30))
+  if (memcmp (rom_gb_logo, rom->header->logo, 0x30))
     return FALSE;
   else
     return TRUE;
@@ -97,7 +101,7 @@ rom_gb_get_title (RomGB *rom) {
   char *title;
 
   title = calloc (sizeof (char), 16);
-  memcpy (title, rom->header.title, 16);
+  memcpy (title, rom->header->title, 16);
 
   return title;
 }
@@ -106,9 +110,9 @@ size_t
 rom_gb_get_rom_size (RomGB *rom) {
   size_t size;
 
-  size = 32 << (rom->header.rom_size & 0x0f);
-  if (rom->header.rom_size & 0xf0)
-    size += 32 << (rom->header.rom_size & 0xf0);
+  size = 32 << (rom->header->rom_size & 0x0f);
+  if (rom->header->rom_size & 0xf0)
+    size += 32 << (rom->header->rom_size & 0xf0);
   size *= 1024;
 
   return size;
@@ -118,13 +122,13 @@ size_t
 rom_gb_get_ram_size (RomGB *rom) {
   size_t size;
 
-  if (rom->header.ram_size == 0)
+  if (rom->header->ram_size == 0)
     size = 0;
-  else if (rom->header.ram_size == 1)
+  else if (rom->header->ram_size == 1)
     size = 2 * 1024;
-  else if (rom->header.ram_size == 2)
+  else if (rom->header->ram_size == 2)
     size = 8 * 1024;
-  else if (rom->header.ram_size == 3)
+  else if (rom->header->ram_size == 3)
     size = 32 * 1024;
 
   return size;
@@ -132,15 +136,15 @@ rom_gb_get_ram_size (RomGB *rom) {
 
 BYTE *
 rom_gb_get_licence (RomGB *rom) {
-  if (rom->header.old_licence == 0x33)
-    return rom->header.new_licence;
+  if (rom->header->old_licence == 0x33)
+    return rom->header->new_licence;
   else
-    return &(rom->header.old_licence);
+    return &(rom->header->old_licence);
 }
 
 RomGBType
 rom_gb_get_type (RomGB *rom) {
-  return rom->header.type;
+  return rom->header->type;
 }
 
 BOOL
@@ -149,10 +153,10 @@ rom_gb_check_header (RomGB *rom) {
 
   x = 0;
   for (i = 0x0134; i <= 0x014C; ++i) {
-    x = x - rom->bank[i] - 1;
+    x = x - rom->banks[0][i] - 1;
   }
 
-  if (rom->header.header_checksum == (x & 0xFF))
+  if (rom->header->header_checksum == (x & 0xFF))
     return TRUE;
   else
     return FALSE;

@@ -9,17 +9,17 @@
 
 int
 main () {
-  RomNES *rom;
   RomGB *rom_gb;
+  /*RomNES *rom;
   CPU6502 *cpu;
   Mapper *mapper;
-  /*ADDR16 addr;
+  ADDR16 addr;
   int i;*/
   char *rom_title;
 
   printf ("Emulator START\n");
 
-  printf ("Load RomNES START\n");
+  /*printf ("Load RomNES START\n");
 
   rom = rom_nes_new ("../data/super.nes");
 
@@ -72,7 +72,7 @@ main () {
 
   printf ("Load RomNES END\n");
 
-/*  printf ("Load CPU6502 START\n");
+  printf ("Load CPU6502 START\n");
 
   mapper = mapper_new (rom);
 
@@ -102,11 +102,11 @@ main () {
     cpu_6502_step (cpu);
   }
 
-  printf ("Load CPU6502 END\n");*/
+  printf ("Load CPU6502 END\n");
 
   rom_nes_free (rom);
   mapper_free (mapper);
-  cpu_6502_free (cpu);
+  cpu_6502_free (cpu);*/
 
   printf ("Load RomGB START\n");
 
