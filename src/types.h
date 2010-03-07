@@ -1,7 +1,7 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
-typedef char BYTE;
+typedef unsigned char BYTE;
 typedef char ADDR8;
 typedef char INT8;
 typedef unsigned char UINT8;

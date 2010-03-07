@@ -4,6 +4,7 @@
 
 #include "cpu_6502.h"
 #include "rom_nes.h"
+#include "rom_gb.h"
 #include "types.h"
 
 const char *ROM_FILENAME = "super.nes";
@@ -11,14 +12,16 @@ const char *ROM_FILENAME = "super.nes";
 int
 main () {
   RomNES *rom;
+  RomGB *rom_gb;
   CPU6502 *cpu;
   Mapper *mapper;
-  ADDR16 addr;
-  int i;
+  /*ADDR16 addr;
+  int i;*/
+  char *rom_title;
 
   printf ("Emulator START\n");
 
-  printf ("Load RomNESNES START\n");
+  printf ("Load RomNES START\n");
 
   rom = rom_nes_new (ROM_FILENAME);
 
@@ -69,23 +72,15 @@ main () {
                                                    , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 2) & 0xff
                                                    , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 1) & 0xff);
 
-  printf ("Load RomNESNES END\n");
+  printf ("Load RomNES END\n");
 
-  printf ("Load CPU6502 START\n");
+/*  printf ("Load CPU6502 START\n");
 
   mapper = mapper_new (rom);
 
   cpu = cpu_6502_new ();
   cpu_6502_set_mapper (cpu, mapper);
   cpu_6502_set_rom (cpu, rom);
-
-  /*printf ("\tcpu->mem->[0x0000] = %02x\n", cpu_6502_get_memory (cpu, 0x0000) & 0xff);
-  cpu_6502_set_memory (cpu, 0x0000, 0x48);
-  printf ("\tcpu->mem->[0x0000] = %02x\n", cpu_6502_get_memory (cpu, 0x0000) & 0xff);
-  printf ("\tcpu->mem->[0x1000] = %02x\n", cpu_6502_get_memory (cpu, 0x1000) & 0xff);
-  cpu_6502_set_memory (cpu, 0x1600, 0x96);
-  printf ("\tcpu->mem->[0x1600] = %02x\n", cpu_6502_get_memory (cpu, 0x1600) & 0xff);
-  printf ("\tcpu->mem->[0x0600] = %02x\n", cpu_6502_get_memory (cpu, 0x0600) & 0xff);*/
 
   printf ("\tcpu->prg start\n\t\t");
   for (addr = 0x8000; addr != 0x8008; ++addr) {
@@ -109,11 +104,21 @@ main () {
     cpu_6502_step (cpu);
   }
 
-  printf ("Load CPU6502 END\n");
+  printf ("Load CPU6502 END\n");*/
 
   rom_nes_free (rom);
   mapper_free (mapper);
   cpu_6502_free (cpu);
+
+  printf ("Load RomGB START\n");
+
+  rom_gb = rom_gb_new ("../data/gameboy.gb");
+  rom_title = rom_gb_get_title (rom_gb);
+  printf ("\trom title = %s\n", rom_title);
+  free (rom_title);
+  rom_gb_free (rom_gb);
+
+  printf ("Load RomGB END\n");
 
   printf ("Emulator END\n");
 

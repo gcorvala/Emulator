@@ -4,6 +4,7 @@ OBJECTS = cpu_6502.o \
 	mapper.o \
 	papu.o \
 	ppu.o \
+	rom_gb.o \
 	rom_nes.o
 
 BIN = main
