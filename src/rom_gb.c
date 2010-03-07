@@ -22,6 +22,7 @@ struct _RomGB {
     BYTE header_checksum;
     BYTE global_checksum[2];
   } header;
+  BYTE bank[32*1024];
 };
 
 const BYTE rom_gb_logo[0x30] = {
@@ -55,6 +56,20 @@ rom_gb_new (const char *filename) {
   }
 
   if (read (rom_fd, &(rom->header), 0x50) == 0) {
+    perror ("rom read");
+    close (rom_fd);
+    rom_gb_free (rom);
+    return NULL;
+  }
+
+  if (lseek (rom_fd, 0x0000, SEEK_SET) == -1) {
+    perror ("seek");
+    close (rom_fd);
+    rom_gb_free (rom);
+    return NULL;
+  }
+
+  if (read (rom_fd, &(rom->bank), 0x150) == 0) {
     perror ("rom read");
     close (rom_fd);
     rom_gb_free (rom);
@@ -121,4 +136,24 @@ rom_gb_get_licence (RomGB *rom) {
     return rom->header.new_licence;
   else
     return &(rom->header.old_licence);
+}
+
+RomGBType
+rom_gb_get_type (RomGB *rom) {
+  return rom->header.type;
+}
+
+BOOL
+rom_gb_check_header (RomGB *rom) {
+  int i, x;
+
+  x = 0;
+  for (i = 0x0134; i <= 0x014C; ++i) {
+    x = x - rom->bank[i] - 1;
+  }
+
+  if (rom->header.header_checksum == (x & 0xFF))
+    return TRUE;
+  else
+    return FALSE;
 }

@@ -7,8 +7,6 @@
 #include "rom_gb.h"
 #include "types.h"
 
-const char *ROM_FILENAME = "super.nes";
-
 int
 main () {
   RomNES *rom;
@@ -23,7 +21,7 @@ main () {
 
   printf ("Load RomNES START\n");
 
-  rom = rom_nes_new (ROM_FILENAME);
+  rom = rom_nes_new ("../data/super.nes");
 
   printf ("\tprg_n_pages = %u\n", rom_nes_get_prg_n_pages (rom));
   printf ("\tprg_size = %lu KB\n", rom_nes_get_prg_size (rom) / 1024);
@@ -115,15 +113,12 @@ main () {
   rom_gb = rom_gb_new ("../data/gameboy.gb");
   rom_title = rom_gb_get_title (rom_gb);
   printf ("\trom title = %s\n", rom_title);
-  if (rom_gb_check_logo (rom_gb) == FALSE) {
-    printf ("\trom logo incorrect!\n");
-  }
-  else {
-    printf ("\trom logo correct!\n");
-  }
   free (rom_title);
+  printf ("\trom logo %s\n", rom_gb_check_logo (rom_gb) ? "ok!" : "failed!");
+  printf ("\trom header checksum %s\n", rom_gb_check_header (rom_gb) ? "ok!" : "failed!");
   printf ("\tram size = %lu KB\n", rom_gb_get_ram_size (rom_gb) / 1024);
   printf ("\trom size = %lu KB\n", rom_gb_get_rom_size (rom_gb) / 1024);
+  printf ("\trom type = %u\n", rom_gb_get_type (rom_gb));
   rom_gb_free (rom_gb);
 
   printf ("Load RomGB END\n");
