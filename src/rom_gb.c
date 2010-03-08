@@ -162,3 +162,25 @@ rom_gb_check_header (RomGB *rom) {
   else
     return FALSE;
 }
+
+BOOL
+rom_gb_check_full (RomGB *rom) {
+  unsigned int nb_banks, i, j, checksum = 0;
+
+  nb_banks = rom_gb_get_rom_size (rom) / (1024 * 16);
+
+  for (i = 0; i < nb_banks; ++i) {
+    for (j = 0; j < 0x4000; ++j) {
+      if (i != 0 || (j != 0x014E && j != 0x014F)) {
+        checksum += rom->banks[i][j];
+        checksum &= 0xffff;
+      }
+    }
+  }
+
+  if (((checksum & 0xff00) >> 8) == rom->header->global_checksum[0] &&
+      (checksum & 0x00ff) == rom->header->global_checksum[1])
+    return TRUE;
+  else
+    return FALSE;
+}
