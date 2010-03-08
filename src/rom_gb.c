@@ -85,6 +85,7 @@ rom_gb_free (RomGB *rom) {
   for (i = 0; i < nb_banks; ++i) {
     free (rom->banks[i]);
   }
+  free (rom->banks);
   free (rom);
 }
 
