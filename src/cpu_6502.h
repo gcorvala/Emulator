@@ -30,7 +30,7 @@ void      cpu_6502_set_break_flag             (CPU6502 *cpu, BOOL flag);
 BOOL      cpu_6502_get_overflow_flag          (CPU6502 *cpu);
 void      cpu_6502_set_overflow_flag          (CPU6502 *cpu, BOOL flag);
 BOOL      cpu_6502_get_negative_flag          (CPU6502 *cpu);
-void      cpu_6502_set_negative_flag          (CPU6502 *cpu, BOOL flag);
+void      cpu_6502_set_negative_flag          (CPU6502 *cpu);
 void      cpu_6502_step                       (CPU6502 *cpu);
 
 #endif
