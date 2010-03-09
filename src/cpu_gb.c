@@ -1,11 +1,34 @@
 #include "cpu_gb.h"
 
+#include "types.h"
+#include <stdio.h>
+#include <stdlib.h>
+
 struct _CpuGB {
-  REG8 reg_a;
-  REG8 reg_x;
-  REG8 reg_y;
-  REG8 reg_status;
-  REG8 reg_sp; /* $0100-$01FF */
-  REG16 reg_ip;
-  BYTE ram[0x0800]; /* 2KB */
+  REG16 AF; /* r_8.h = A */
+  REG16 BC; /* r_8.h = B | r_8.l = C */
+  REG16 DE; /* r_8.h = D | r_8.l = E */
+  REG16 HL; /* r_8.h = H | r_8.l = L */
+  REG16 SP;
+  REG16 PC;
 };
+
+CpuGB *
+cpu_gb_new  (void) {
+  CpuGB *cpu;
+
+  cpu = calloc (sizeof (CpuGB), 1);
+
+  cpu->AF.r_16 = 0xFB84;
+  printf ("%s : AF = %04x\n", FUNC, cpu->AF.r_16);
+  printf ("%s : A = %02x\n", FUNC, cpu->AF.r_8.h);
+  printf ("%s : F = %02x\n", FUNC, cpu->AF.r_8.l);
+
+  return cpu;
+}
+
+void
+cpu_gb_free (CpuGB *cpu) {
+  free (cpu);
+}
+
