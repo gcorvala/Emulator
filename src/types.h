@@ -4,12 +4,18 @@
 typedef unsigned char BYTE;
 typedef char INT8;
 typedef unsigned char UINT8;
-typedef short INT16;
-typedef unsigned short UINT16;
+typedef short int INT16;
+typedef unsigned short int UINT16;
 typedef unsigned char ADDR8;
-typedef unsigned short ADDR16;
-typedef char REG8;
-typedef short REG16;
+typedef unsigned short int ADDR16;
+typedef UINT8 REG8;
+typedef union {
+  UINT16 r_16;
+  struct {
+    REG8 l;
+    REG8 h;
+  } r_8;
+} REG16;
 typedef int BOOL;
 
 #define FALSE (0)
