@@ -41,17 +41,16 @@ typedef enum {
 
 RomGB *   rom_gb_new              (const char *filename);
 void      rom_gb_free             (RomGB *rom);
-BOOL      rom_gb_check_logo       (RomGB *rom);
 char *    rom_gb_get_title        (RomGB *rom);
-char *    rom_gb_get_manufacturer (RomGB *rom);
-BYTE      rom_gb_get_color_flag   (RomGB *rom);
-BYTE *    rom_gb_get_licence      (RomGB *rom);
-BYTE      rom_gb_get_super_flag   (RomGB *rom);
+UINT16    rom_gb_get_licence      (RomGB *rom);
 RomGBType rom_gb_get_type         (RomGB *rom);
 size_t    rom_gb_get_rom_size     (RomGB *rom);
 size_t    rom_gb_get_ram_size     (RomGB *rom);
-BYTE      rom_gb_get_destination  (RomGB *rom);
-BYTE      rom_gb_get_version      (RomGB *rom);
+UINT8     rom_gb_get_version      (RomGB *rom);
+BOOL      rom_gb_has_color_flag   (RomGB *rom);
+BOOL      rom_gb_has_super_flag   (RomGB *rom);
+BOOL      rom_gb_is_for_japan     (RomGB *rom);
+BOOL      rom_gb_check_logo       (RomGB *rom);
 BOOL      rom_gb_check_header     (RomGB *rom);
 BOOL      rom_gb_check_full       (RomGB *rom);
 

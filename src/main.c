@@ -15,7 +15,7 @@ main () {
   Mapper *mapper;
   ADDR16 addr;
   int i;*/
-  char *rom_title;
+  char *tmp;
 
   printf ("Emulator START\n");
 
@@ -60,7 +60,7 @@ main () {
                                                    , rom_nes_get_chr_memory (rom, 5) 
                                                    , rom_nes_get_chr_memory (rom, 6) 
                                                    , rom_nes_get_chr_memory (rom, 7));
-  printf ("\trom->chr end\n");
+  printf (e would like to continue finding new national locations as we spread GNOME throughout Asia, and we are looking for local organizers to rise to the challenge of organizing an excellent GNOME event. The G"\trom->chr end\n");
   printf ("\t\t%02x%02x%02x%02x %02x%02x%02x%02x\n", rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 8) 
                                                    , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 7) 
                                                    , rom_nes_get_prg_memory (rom, rom_nes_get_prg_size (rom) - 6) 
@@ -110,16 +110,21 @@ main () {
 
   printf ("Load RomGB START\n");
 
-  rom_gb = rom_gb_new ("../data/super.gb");
-  rom_title = rom_gb_get_title (rom_gb);
-  printf ("\trom title = %s\n", rom_title);
-  free (rom_title);
-  printf ("\trom logo %s\n", rom_gb_check_logo (rom_gb) ? "ok!" : "failed!");
-  printf ("\trom header checksum %s\n", rom_gb_check_header (rom_gb) ? "ok!" : "failed!");
-  printf ("\trom full checksum %s\n", rom_gb_check_full (rom_gb) ? "ok!" : "failed!");
-  printf ("\tram size = %lu KB\n", rom_gb_get_ram_size (rom_gb) / 1024);
-  printf ("\trom size = %lu KB\n", rom_gb_get_rom_size (rom_gb) / 1024);
-  printf ("\trom type = %u\n", rom_gb_get_type (rom_gb));
+  rom_gb = rom_gb_new ("../data/gameboy.gb");
+  tmp = rom_gb_get_title (rom_gb);
+  printf ("\trom_gb_get_title = %s\n", tmp);
+  free (tmp);
+  printf ("\trom_gb_get_licence = %u\n", rom_gb_get_licence (rom_gb));
+  printf ("\trom_gb_get_type = %u\n", rom_gb_get_type (rom_gb));
+  printf ("\trom_gb_get_rom_size = %lu KB\n", rom_gb_get_rom_size (rom_gb) / 1024);
+  printf ("\trom_gb_get_ram_size = %lu KB\n", rom_gb_get_ram_size (rom_gb) / 1024);
+  printf ("\trom_gb_get_version = %u\n", rom_gb_get_version (rom_gb));
+  printf ("\trom_gb_has_color_flag = %s\n", rom_gb_has_color_flag (rom_gb) ? "TRUE" : "FALSE");
+  printf ("\trom_gb_has_super_flag = %s\n", rom_gb_has_super_flag (rom_gb) ? "TRUE" : "FALSE");
+  printf ("\trom_gb_is_for_japan = %s\n", rom_gb_is_for_japan (rom_gb) ? "TRUE" : "FALSE");
+  printf ("\trom_gb_check_logo = %s\n", rom_gb_check_logo (rom_gb) ? "TRUE" : "FALSE");
+  printf ("\trom_gb_check_header = %s\n", rom_gb_check_header (rom_gb) ? "TRUE" : "FALSE");
+  printf ("\trom_gb_check_full = %s\n", rom_gb_check_full (rom_gb) ? "TRUE" : "FALSE");
   rom_gb_free (rom_gb);
 
   printf ("Load RomGB END\n");

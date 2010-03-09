@@ -9,7 +9,8 @@
 typedef struct {
   BYTE entry[4];
   BYTE logo[48];
-  BYTE title[16];
+  BYTE title[15];
+  BYTE color_flag;
   BYTE new_licence[2];
   BYTE super_flag;
   BYTE type;
@@ -89,22 +90,40 @@ rom_gb_free (RomGB *rom) {
   free (rom);
 }
 
-BOOL
-rom_gb_check_logo (RomGB *rom) {
-  if (memcmp (rom_gb_logo, rom->header->logo, 0x30))
-    return FALSE;
-  else
-    return TRUE;
-}
-
 char *
 rom_gb_get_title (RomGB *rom) {
   char *title;
+  size_t size;
 
-  title = calloc (sizeof (char), 16);
-  memcpy (title, rom->header->title, 16);
+  if (rom_gb_has_color_flag (rom) == TRUE)
+    size = 15;
+  else
+    size = 16;
+
+  title = calloc (sizeof (char), size + 1);
+  memcpy (title, rom->header->title, size);
+  title[size] = 0;
 
   return title;
+}
+
+UINT16
+rom_gb_get_licence (RomGB *rom) {
+  UINT16 licence = 0x0000;
+
+  if (rom->header->old_licence == 0x33) {
+    licence = rom->header->new_licence[0] << 8;
+    licence &= rom->header->new_licence[1];
+  }
+  else
+    licence = rom->header->old_licence;
+
+  return licence;
+}
+
+RomGBType
+rom_gb_get_type (RomGB *rom) {
+  return rom->header->type;
 }
 
 size_t
@@ -135,17 +154,41 @@ rom_gb_get_ram_size (RomGB *rom) {
   return size;
 }
 
-BYTE *
-rom_gb_get_licence (RomGB *rom) {
-  if (rom->header->old_licence == 0x33)
-    return rom->header->new_licence;
-  else
-    return &(rom->header->old_licence);
+UINT8
+rom_gb_get_version (RomGB *rom) {
+  return rom->header->version;
 }
 
-RomGBType
-rom_gb_get_type (RomGB *rom) {
-  return rom->header->type;
+BOOL
+rom_gb_has_color_flag (RomGB *rom) {
+  if (rom->header->color_flag == 0x80 || rom->header->color_flag == 0xC0)
+    return TRUE;
+  else
+    return FALSE;
+}
+
+BOOL
+rom_gb_has_super_flag (RomGB *rom) {
+  if (rom->header->super_flag == 0x03)
+    return TRUE;
+  else
+    return FALSE;
+}
+
+BOOL
+rom_gb_is_for_japan (RomGB *rom) {
+  if (rom->header->destination == 0x00)
+    return TRUE;
+  else
+    return FALSE;
+}
+
+BOOL
+rom_gb_check_logo (RomGB *rom) {
+  if (memcmp (rom_gb_logo, rom->header->logo, 0x30))
+    return FALSE;
+  else
+    return TRUE;
 }
 
 BOOL

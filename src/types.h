@@ -2,9 +2,11 @@
 #define _TYPES_H_
 
 typedef unsigned char BYTE;
-typedef char ADDR8;
 typedef char INT8;
 typedef unsigned char UINT8;
+typedef short INT16;
+typedef unsigned short UINT16;
+typedef unsigned char ADDR8;
 typedef unsigned short ADDR16;
 typedef char REG8;
 typedef short REG16;
