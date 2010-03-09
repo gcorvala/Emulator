@@ -100,9 +100,7 @@ rom_gb_get_title (RomGB *rom) {
   else
     size = 16;
 
-  title = calloc (sizeof (char), size + 1);
-  memcpy (title, rom->header->title, size);
-  title[size] = 0;
+  title = strndup (rom->header->title, size);
 
   return title;
 }
