@@ -55,7 +55,7 @@ cpu_6502_free (CPU6502 *cpu) {
 
 void
 cpu_6502_set_rom (CPU6502 *cpu, RomNES *rom) {
-  cpu->reg_ip = 0;
+  cpu->reg_ip.r_16 = 0;
   cpu->rom = rom;
 }
 
@@ -193,8 +193,8 @@ cpu_6502_get_negative_flag (CPU6502 *cpu) {
 }
 
 void
-cpu_6502_set_negative_flag (CPU6502 *cpu, BOOL flag) {
-  cpu->reg_status = flag ? cpu->reg_status | 0x80 : cpu->reg_status & ~0x80;
+cpu_6502_set_negative_flag (CPU6502 *cpu) {
+  cpu->reg_status = (cpu->reg_a & 0x80) ? cpu->reg_status | 0x80 : cpu->reg_status & ~0x80;
 }
 
 void
@@ -205,9 +205,9 @@ cpu_6502_exec_null (CPU6502 *cpu) {
 void
 cpu_6502_exec_brk (CPU6502 *cpu) {
   printf ("cpu_6502_exec_brk\n");
-  cpu->reg_ip++;
-  cpu_6502_push (cpu, (cpu->reg_ip >> 8) & 0xff);
-  cpu_6502_push (cpu, cpu->reg_ip & 0xff);
+  cpu->reg_ip.r_16++;
+  cpu_6502_push (cpu, cpu->reg_ip.r_8.h);
+  cpu_6502_push (cpu, cpu->reg_ip.r_8.l);
   cpu_6502_set_break_flag (cpu, TRUE);
   cpu_6502_push (cpu, cpu->reg_status);
   cpu_6502_set_interrupt_disable_flag (cpu, TRUE);
@@ -223,19 +223,19 @@ cpu_6502_exec_cld (CPU6502 *cpu) {
 
 void
 cpu_6502_exec_lda (CPU6502 *cpu) {
-  printf ("cpu_6502_exec_lda %02x\n", rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip + 1));
-  cpu->reg_a = rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip + 1);
+  printf ("cpu_6502_exec_lda %02x\n", rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip.r_16 + 1));
+  cpu->reg_a = rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip.r_16 + 1);
   cpu_6502_set_zero_flag (cpu, cpu->reg_a == 0 ? TRUE : FALSE);
-  cpu_6502_set_negative_flag (cpu, cpu->reg_a < 0 ? TRUE : FALSE);
+  cpu_6502_set_negative_flag (cpu);
 }
 
 void
 cpu_6502_exec_ldx (CPU6502 *cpu) {
   printf ("cpu_6502_exec_ldx\n");
 
-  cpu->reg_x = rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip + 1);
+  cpu->reg_x = rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip.r_16 + 1);
   cpu_6502_set_zero_flag (cpu, cpu->reg_x == 0 ? TRUE : FALSE);
-  cpu_6502_set_negative_flag (cpu, cpu->reg_x < 0 ? TRUE : FALSE);
+  cpu_6502_set_negative_flag (cpu);
 }
 
 void
@@ -250,7 +250,7 @@ cpu_6502_exec_sta (CPU6502 *cpu) {
 
   printf ("cpu_6502_exec_sta\n");
 
-  addr = ((rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip + 1) << 8) & 0xFF) | (rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip + 2) & 0xFF);
+  addr = ((rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip.r_16 + 1) << 8) | rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip.r_16 + 2));
   cpu_6502_set_memory (cpu, addr, cpu->reg_a);
 }
 
@@ -539,12 +539,12 @@ void
 cpu_6502_step (CPU6502 *cpu) {
   INT8 opcode;
 
-  opcode = rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip);
+  opcode = rom_nes_get_prg_memory (cpu->rom, cpu->reg_ip.r_16);
 
   printf ("\t%s : [opcode] %02x\n", FUNC, opcode & 0xff);
   if ((opcode & 0xff) < 0xff) {
     printf ("\t\t");
     OpCodes[opcode & 0xff].func (cpu);
-    cpu->reg_ip += OpCodes[opcode & 0xff].bytes;
+    cpu->reg_ip.r_16 += OpCodes[opcode & 0xff].bytes;
   }
 }
