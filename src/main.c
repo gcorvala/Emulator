@@ -19,6 +19,26 @@ main () {
   int i;
   char *tmp;
 
+  printf ("Test types START\n");
+
+  printf ("\tsizeof (INT8) = %lu bits\n", sizeof (INT8) * 8);
+  printf ("\tsizeof (INT16) = %lu bits\n", sizeof (INT16) * 8);
+  printf ("\tsizeof (INT32) = %lu bits\n", sizeof (INT32) * 8);
+  printf ("\tsizeof (UINT8) = %lu bits\n", sizeof (UINT8) * 8);
+  printf ("\tsizeof (UINT16) = %lu bits\n", sizeof (UINT16) * 8);
+  printf ("\tsizeof (UINT32) = %lu bits\n", sizeof (UINT32) * 8);
+  printf ("\tsizeof (ADDR8) = %lu bits\n", sizeof (ADDR8) * 8);
+  printf ("\tsizeof (ADDR16) = %lu bits\n", sizeof (ADDR16) * 8);
+  printf ("\tsizeof (ADDR32) = %lu bits\n", sizeof (ADDR32) * 8);
+  printf ("\tsizeof (REG8) = %lu bits\n", sizeof (REG8) * 8);
+  printf ("\tsizeof (REG16) = %lu bits\n", sizeof (REG16) * 8);
+  printf ("\tsizeof (REG32) = %lu bits\n", sizeof (REG32) * 8);
+
+  printf ("\tTRUE = %d\n", TRUE);
+  printf ("\tFALSE = %d\n", FALSE);
+
+  printf ("Test types END\n");
+
   printf ("Emulator START\n");
 
   printf ("Load RomNES START\n");

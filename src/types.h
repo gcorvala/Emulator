@@ -2,12 +2,20 @@
 #define _TYPES_H_
 
 typedef unsigned char BYTE;
-typedef char INT8;
+
+typedef signed char INT8;
 typedef unsigned char UINT8;
-typedef short int INT16;
+
+typedef signed short int INT16;
 typedef unsigned short int UINT16;
-typedef unsigned char ADDR8;
-typedef unsigned short int ADDR16;
+
+typedef signed int INT32;
+typedef unsigned int UINT32;
+
+typedef UINT8 ADDR8;
+typedef UINT16 ADDR16;
+typedef UINT32 ADDR32;
+
 typedef UINT8 REG8;
 typedef union {
   UINT16 r_16;
@@ -16,6 +24,14 @@ typedef union {
     REG8 h;
   } r_8;
 } REG16;
+typedef union {
+  UINT32 r_32;
+  struct {
+    REG16 l;
+    REG16 h;
+  } r_16;
+} REG32;
+
 typedef int BOOL;
 
 #define FALSE (0)
