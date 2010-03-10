@@ -5,6 +5,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef struct {
+  unsigned int unset : 4;
+  unsigned int negative_flag : 1;
+  unsigned int half_carry_flag : 1;
+  unsigned int carry_flag : 1;
+  unsigned int zero_flag : 1;
+} CpuGBFlags;
+
 struct _CpuGB {
   REG16 AF; /* r_8.h = A */
   REG16 BC; /* r_8.h = B | r_8.l = C */
@@ -16,6 +24,8 @@ struct _CpuGB {
   BYTE ram[0x2000]; /* 8KB */
 
   UINT32 ticks;
+
+  CpuGBFlags *flags;
 };
 
 CpuGB *
@@ -23,6 +33,8 @@ cpu_gb_new  (void) {
   CpuGB *cpu;
 
   cpu = calloc (sizeof (CpuGB), 1);
+
+  cpu->flags = (CpuGBFlags *) &cpu->AF.r_8.l;
 
   return cpu;
 }
