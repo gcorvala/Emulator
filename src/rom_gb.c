@@ -110,12 +110,11 @@ rom_gb_get_title (RomGB *rom) {
 UINT16
 rom_gb_get_licence (RomGB *rom) {
   UINT16 licence = 0x0000;
-  char new_licence[3];
+  char new_licence[2];
 
   if (rom->header->old_licence == 0x33) {
     new_licence[0] = rom->header->new_licence[0];
     new_licence[1] = rom->header->new_licence[1];
-    new_licence[2] = 0;
     licence = atoi (new_licence);
   }
   else
@@ -153,6 +152,8 @@ rom_gb_get_ram_size (RomGB *rom) {
     size = 8 * 1024;
   else if (rom->header->ram_size == 3)
     size = 32 * 1024;
+  else
+    size = 0;
 
   return size;
 }
