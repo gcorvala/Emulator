@@ -42,11 +42,45 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
     printf ("%s : rom or map are not set!\n", FUNC);
 
   if (addr < 0x4000)
-    result = rom_gb_get_memory (map->rom, 0, addr);
+    result = rom_gb_get_rom_memory (map->rom, 0, addr);
   else if (addr < 0x8000)
-    result = rom_gb_get_memory (map->rom, 1, addr);
-  else
+    result = rom_gb_get_rom_memory (map->rom, 1, addr);
+  else if (addr < 0xA000) {
+    printf ("%s : access to video ram at [%04x] not implemented!\n", FUNC, addr);
     result = 0x00;
+  }
+  else if (addr < 0xC000) {
+    printf ("%s : access to switchable ram at [%04x] not implemented!\n", FUNC, addr);
+    result = 0x00;
+  }
+  else if (addr < 0xE000)
+    result = cpu_gb_get_ram_memory (map->cpu, addr - 0xC000);
+  else if (addr < 0xFE00)
+    result = cpu_gb_get_ram_memory (map->cpu, addr - 0xE000);
+  else if (addr < 0xFEA0) {
+    printf ("%s : not implemented!\n", FUNC);
+    result = 0x00;
+  }
+  else if (addr < 0xFF00) {
+    printf ("%s : not implemented!\n", FUNC);
+    result = 0x00;
+  }
+  else if (addr < 0xFF4C) {
+    printf ("%s : not implemented!\n", FUNC);
+    result = 0x00;
+  }
+  else if (addr < 0xFF80) {
+    printf ("%s : not implemented!\n", FUNC);
+    result = 0x00;
+  }
+  else if (addr < 0xFFFF) {
+    printf ("%s : access to switchable ram at [%04x] not implemented!\n", FUNC, addr);
+    result = 0x00;
+  }
+  else {
+    printf ("%s : access to Interrupt Enable Register not implemented!\n", FUNC);
+    result = 0x00;
+  }
 
   return result;
 }

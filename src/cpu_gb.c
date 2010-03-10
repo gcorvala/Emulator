@@ -13,6 +13,8 @@ struct _CpuGB {
   REG16 SP;
   REG16 PC;
 
+  BYTE ram[0x2000]; /* 8KB */
+
   UINT32 ticks;
 };
 
@@ -22,17 +24,26 @@ cpu_gb_new  (void) {
 
   cpu = calloc (sizeof (CpuGB), 1);
 
-  cpu->AF.r_16 = 0xFB84;
-  printf ("%s : AF = %04x\n", FUNC, cpu->AF.r_16);
-  printf ("%s : A = %02x\n", FUNC, cpu->AF.r_8.h);
-  printf ("%s : F = %02x\n", FUNC, cpu->AF.r_8.l);
-
   return cpu;
 }
 
 void
 cpu_gb_free (CpuGB *cpu) {
   free (cpu);
+}
+
+BYTE
+cpu_gb_get_ram_memory (CpuGB *cpu, ADDR16 addr) {
+  BYTE result;
+
+  if (addr > 0x2000) {
+    printf ("%s : address [%04x] overflow!\n", FUNC, addr);
+    result = 0;
+  }
+  else
+    result = cpu->ram[addr];
+
+  return result;
 }
 
 void
