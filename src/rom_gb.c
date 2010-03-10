@@ -124,7 +124,7 @@ rom_gb_get_licence (RomGB *rom) {
   return licence;
 }
 
-RomGBType
+UINT8
 rom_gb_get_type (RomGB *rom) {
   return rom->header->type;
 }
