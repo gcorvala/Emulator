@@ -2,6 +2,7 @@ CC = gcc -Wall -pedantic -O4 -Werror
 
 OBJECTS = cpu_6502.o \
 	cpu_gb.o \
+	map_gb.o \
 	mapper.o \
 	rom_gb.o \
 	rom_nes.o

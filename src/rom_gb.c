@@ -231,3 +231,18 @@ rom_gb_check_full (RomGB *rom) {
   else
     return FALSE;
 }
+
+BYTE
+rom_gb_get_memory (RomGB *rom, UINT8 bank, ADDR16 addr) {
+  unsigned int nb_banks;
+
+  nb_banks = rom_gb_get_rom_size (rom) / (1024 * 16);
+
+  if (bank >= nb_banks)
+    printf ("%s : bank %u not available!\n", FUNC, bank);
+
+  if (addr >= 0x4000)
+    printf ("%s : bank address %u overflow!\n", FUNC, addr);
+
+  return rom->banks[bank][addr];
+}

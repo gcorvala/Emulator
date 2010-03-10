@@ -6,12 +6,14 @@
 #include "cpu_gb.h"
 #include "rom_nes.h"
 #include "rom_gb.h"
+#include "map_gb.h"
 #include "types.h"
 
 int
 main () {
   RomGB *rom_gb;
   CpuGB *cpu_gb;
+  MapGB *map_gb;
   RomNES *rom_nes;
   CPU6502 *cpu_nes;
   Mapper *mapper_nes;
@@ -132,7 +134,7 @@ main () {
 
   printf ("Load RomGB START\n");
 
-  rom_gb = rom_gb_new ("../data/gameboy.gb");
+  rom_gb = rom_gb_new ("../data/boxxle.gb");
   tmp = rom_gb_get_title (rom_gb);
   printf ("\trom_gb_get_title = %s\n", tmp);
   free (tmp);
@@ -147,16 +149,28 @@ main () {
   printf ("\trom_gb_check_logo = %s\n", rom_gb_check_logo (rom_gb) ? "TRUE" : "FALSE");
   printf ("\trom_gb_check_header = %s\n", rom_gb_check_header (rom_gb) ? "TRUE" : "FALSE");
   printf ("\trom_gb_check_full = %s\n", rom_gb_check_full (rom_gb) ? "TRUE" : "FALSE");
-  rom_gb_free (rom_gb);
+  /*rom_gb_free (rom_gb);*/
 
   printf ("Load RomGB END\n");
 
   printf ("Load CpuGB START\n");
 
   cpu_gb = cpu_gb_new ();
-  cpu_gb_free (cpu_gb);
+  /*cpu_gb_free (cpu_gb);*/
 
   printf ("Load CpuGB END\n");
+
+  printf ("Load MapGB START\n");
+
+  map_gb = map_gb_new ();
+  map_gb_set_cpu (map_gb, cpu_gb);
+  map_gb_set_rom (map_gb, rom_gb);
+  printf ("\tmap_gb_get_memory (0x0134) = %c\n", map_gb_get_memory (map_gb, 0x134));
+  map_gb_free (map_gb);
+  rom_gb_free (rom_gb);
+  cpu_gb_free (cpu_gb);
+
+  printf ("Load MapGB END\n");
 
   printf ("Emulator END\n");
 
