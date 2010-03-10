@@ -137,7 +137,7 @@ main () {
   printf ("\trom_gb_get_title = %s\n", tmp);
   free (tmp);
   printf ("\trom_gb_get_licence = %u\n", rom_gb_get_licence (rom_gb));
-  printf ("\trom_gb_get_type = %u\n", rom_gb_get_type (rom_gb));
+  printf ("\trom_gb_get_type = %02x\n", rom_gb_get_type (rom_gb));
   printf ("\trom_gb_get_rom_size = %lu KB\n", rom_gb_get_rom_size (rom_gb) / 1024);
   printf ("\trom_gb_get_ram_size = %lu KB\n", rom_gb_get_ram_size (rom_gb) / 1024);
   printf ("\trom_gb_get_version = %u\n", rom_gb_get_version (rom_gb));

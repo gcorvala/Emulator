@@ -3,8 +3,6 @@ CC = gcc -Wall -pedantic
 OBJECTS = cpu_6502.o \
 	cpu_gb.o \
 	mapper.o \
-	papu.o \
-	ppu.o \
 	rom_gb.o \
 	rom_nes.o
 
