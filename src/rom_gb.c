@@ -110,10 +110,13 @@ rom_gb_get_title (RomGB *rom) {
 UINT16
 rom_gb_get_licence (RomGB *rom) {
   UINT16 licence = 0x0000;
+  char new_licence[3];
 
   if (rom->header->old_licence == 0x33) {
-    licence = rom->header->new_licence[0] << 8;
-    licence &= rom->header->new_licence[1];
+    new_licence[0] = rom->header->new_licence[0];
+    new_licence[1] = rom->header->new_licence[1];
+    new_licence[2] = 0;
+    licence = atoi (new_licence);
   }
   else
     licence = rom->header->old_licence;
