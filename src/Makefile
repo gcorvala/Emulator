@@ -1,4 +1,4 @@
-CC = gcc -Wall -pedantic -O4 -Werror
+CC = gcc -Wall -pedantic -O4 -Werror -std=gnu99
 
 OBJECTS = cpu_6502.o \
 	cpu_gb.o \
