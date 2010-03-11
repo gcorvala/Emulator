@@ -24,4 +24,5 @@ BOOL      rom_gb_check_full       (RomGB *rom);
 BYTE      rom_gb_get_rom_memory   (RomGB *rom, UINT8 bank, ADDR16 addr);
 BYTE      rom_gb_get_ram_memory   (RomGB *rom, UINT8 bank, ADDR16 addr);
 void      rom_gb_set_ram_memory   (RomGB *rom, UINT8 bank, ADDR16 addr, BYTE value);
+
 #endif
