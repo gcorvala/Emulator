@@ -1,7 +1,5 @@
 #include "cpu_gb.h"
 
-#include "types.h"
-#include "map_gb.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -26,6 +24,8 @@ struct _CpuGB {
   UINT32 ticks;
 
   CpuGBFlags *flags;
+
+  MapGB *map;
 };
 
 CpuGB *
@@ -56,6 +56,11 @@ cpu_gb_get_ram_memory (CpuGB *cpu, ADDR16 addr) {
     result = cpu->ram[addr];
 
   return result;
+}
+
+void
+cpu_gb_set_mapper (CpuGB *cpu, MapGB *map) {
+  cpu->map = map;
 }
 
 void
