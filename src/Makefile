@@ -18,3 +18,6 @@ main: main.c $(OBJECTS)
 
 clean:
 	rm -f $(OBJECTS) $(BIN)
+
+memcheck: main
+	valgrind --leak-check=full ./main
