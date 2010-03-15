@@ -5,8 +5,6 @@
 
 #include <stddef.h>
 
-typedef struct _RomNES RomNES;
-
 RomNES *            rom_nes_new                  (const char *filename);
 void                rom_nes_free                 (RomNES *rom);
 BYTE                rom_nes_get_prg_memory       (RomNES *rom, ADDR16 addr);

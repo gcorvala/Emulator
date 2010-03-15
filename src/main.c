@@ -2,7 +2,9 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
+#include "cpu_nes.h"
 #include "rom_nes.h"
+#include "map_nes.h"
 
 #include "cpu_gb.h"
 #include "rom_gb.h"

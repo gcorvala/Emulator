@@ -2,11 +2,11 @@ CC = gcc -Wall -pedantic -O4 -Werror -std=gnu99
 
 OBJECTS = \
 	cpu_gb.o \
+	cpu_nes.o \
 	map_gb.o \
-	mapper.o \
+	map_nes.o \
 	rom_gb.o \
 	rom_nes.o
-#cpu_6502.o \
 
 BIN = main
 

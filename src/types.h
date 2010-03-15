@@ -5,6 +5,10 @@ typedef struct _CpuGB CpuGB;
 typedef struct _MapGB MapGB;
 typedef struct _RomGB RomGB;
 
+typedef struct _CpuNES CpuNES;
+typedef struct _MapNES MapNES;
+typedef struct _RomNES RomNES;
+
 typedef unsigned char BYTE;
 
 typedef signed char INT8;
