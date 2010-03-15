@@ -2,10 +2,6 @@
 #define _MAP_GB_H_
 
 #include "types.h"
-#include "cpu_gb.h"
-#include "rom_gb.h"
-
-typedef struct _MapGB MapGB;
 
 MapGB * map_gb_new        (void);
 void    map_gb_free       (MapGB *map);

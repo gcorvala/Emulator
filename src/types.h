@@ -1,6 +1,10 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
+typedef struct _CpuGB CpuGB;
+typedef struct _MapGB MapGB;
+typedef struct _RomGB RomGB;
+
 typedef unsigned char BYTE;
 
 typedef signed char INT8;

@@ -5,8 +5,6 @@
 
 #include <stddef.h>
 
-typedef struct _RomGB RomGB;
-
 RomGB *   rom_gb_new              (const char *filename);
 void      rom_gb_free             (RomGB *rom);
 char *    rom_gb_get_title        (RomGB *rom);
