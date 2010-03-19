@@ -1,7 +1,11 @@
 #include "cpu_gb.h"
 
+#include "map_gb.h"
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 typedef struct {
   unsigned int unset : 4;
@@ -19,6 +23,7 @@ struct _CpuGB {
   REG16 SP;
   REG16 PC;
 
+  BYTE rom[0x0100]; /* 256B */
   BYTE ram[0x2000]; /* 8KB */
 
   UINT32 ticks;
@@ -31,10 +36,24 @@ struct _CpuGB {
 CpuGB *
 cpu_gb_new  (void) {
   CpuGB *cpu;
+  int rom_fd;
 
   cpu = calloc (sizeof (CpuGB), 1);
 
   cpu->flags = (CpuGBFlags *) &cpu->AF.r_8.l;
+
+  rom_fd = open ("../data/DMG_ROM.bin", O_RDONLY);
+
+  if (rom_fd == -1) {
+    perror ("cpu_gb_new");
+    return NULL;
+  }
+
+  if (read (rom_fd, cpu->rom, 0x0100) == 0) {
+    perror ("cpu_gb_new rom read");
+    close (rom_fd);
+    return NULL;
+  }
 
   return cpu;
 }
@@ -66,44 +85,159 @@ cpu_gb_set_mapper (CpuGB *cpu, MapGB *map) {
 void
 cpu_gb_step (CpuGB *cpu) {
   BYTE opcode = 0;
+  BOOL tmp;
 
-/*  opcode = cpu_gb_get_memory (cpu, cpu->SP); */
+  opcode = cpu->rom[cpu->PC.r_16];
+/*  opcode = cpu_gb_get_memory (cpu, cpu->SP);
+  printf ("\t%s : opcode [%02x]\n", FUNC, opcode);*/
 
   switch (opcode) {
     case 0x00:
-      cpu->SP.r_16++;
-      cpu->ticks += 4;
-      break;
-    case 0x01:
-      /*cpu->BC.r_16 = cpu_gb_get_memory (cpu, cpu->SP + 1) & (cpu_gb_get_memory (cpu, cpu->SP + 2) << 8);*/
-      break;
-    case 0x02:
-      break;
-    case 0x03:
-      break;
-    case 0x04:
-      break;
-    case 0x05:
+      printf ("\t\tNOP\n");
+      cpu->PC.r_16++;
       break;
     case 0x06:
-      break;
-    case 0x07:
-      break;
-    case 0x08:
-      break;
-    case 0x09:
-      break;
-    case 0x0A:
-      break;
-    case 0x0B:
+      printf ("\t\tLD B, %02x\n", cpu->rom[cpu->PC.r_16 + 1]);
+      cpu->BC.r_8.h = cpu->rom[cpu->PC.r_16 + 1];
+      cpu->PC.r_16 += 2;
       break;
     case 0x0C:
-      break;
-    case 0x0D:
+      printf ("\t\tINC C\n");
+      cpu->BC.r_8.l++;
+      cpu->PC.r_16 += 1;
       break;
     case 0x0E:
+      printf ("\t\tLD C, %02x\n", cpu->rom[cpu->PC.r_16 + 1]);
+      cpu->BC.r_8.l = cpu->rom[cpu->PC.r_16 + 1];
+      cpu->PC.r_16 += 2;
       break;
-    case 0x0F:
+    case 0x11:
+      cpu->DE.r_8.l = cpu->rom[cpu->PC.r_16 + 1];
+      cpu->DE.r_8.h = cpu->rom[cpu->PC.r_16 + 2];
+      printf ("\t\tLD DE, %04x\n", cpu->DE.r_16);
+      cpu->PC.r_16 += 3;
+      break;
+    case 0x17:
+      printf ("\t\tRL A\n");
+      tmp = 0x80 & cpu->AF.r_8.h;
+      cpu->AF.r_8.h <<= 1;
+      if (cpu->flags->carry_flag)
+        cpu->AF.r_8.h += 1;
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = FALSE;
+      cpu->flags->carry_flag = tmp;
+      if (cpu->AF.r_8.h == 0)
+        cpu->flags->zero_flag = TRUE;
+      cpu->PC.r_16 += 1;
+      break;
+    case 0x1A:
+      printf ("\t\tLD A, (DE)\n");
+      cpu->AF.r_8.h = map_gb_get_memory (cpu->map, cpu->DE.r_16);
+      cpu->PC.r_16 += 1;
+      break;
+    case 0x20:
+      printf ("\t\tJR NZ, %d\n", (INT8) cpu->rom[cpu->PC.r_16 + 1]);
+      if (cpu->flags->zero_flag == FALSE)
+        cpu->PC.r_16 += (INT8) cpu->rom[cpu->PC.r_16 + 1];
+      cpu->PC.r_16 += 2;
+      break;
+    case 0x21:
+      cpu->HL.r_8.l = cpu->rom[cpu->PC.r_16 + 1];
+      cpu->HL.r_8.h = cpu->rom[cpu->PC.r_16 + 2];
+      printf ("\t\tLD HL, %04x\n", cpu->HL.r_16);
+      cpu->PC.r_16 += 3;
+      break;
+    case 0x31:
+      cpu->SP.r_8.l = cpu->rom[cpu->PC.r_16 + 1];
+      cpu->SP.r_8.h = cpu->rom[cpu->PC.r_16 + 2];
+      printf ("\t\tLD SP, %04x\n", cpu->SP.r_16);
+      cpu->PC.r_16 += 3;
+      break;
+    case 0x32:
+      printf ("\t\tLDD (HL-), A\n");
+      map_gb_set_memory (cpu->map, cpu->HL.r_16, cpu->AF.r_8.h);
+      cpu->HL.r_16 -= 1;
+      cpu->PC.r_16 += 1;
+      break;
+    case 0x3E:
+      printf ("\t\tLD A, %02x\n", cpu->rom[cpu->PC.r_16 + 1]);
+      cpu->AF.r_8.h = cpu->rom[cpu->PC.r_16 + 1];
+      cpu->PC.r_16 += 2;
+      break;
+    case 0x4F:
+      printf ("\t\tLD C, A\n");
+      cpu->BC.r_8.l = cpu->AF.r_8.h;
+      cpu->PC.r_16 += 1;
+      break;
+    case 0x77:
+      printf ("\t\tLD (HL), A\n");
+      map_gb_set_memory (cpu->map, cpu->HL.r_16, cpu->AF.r_8.h);
+      cpu->PC.r_16 += 1;
+      break;
+    case 0xAF:
+      printf ("\t\tXOR A\n");
+      cpu->AF.r_8.h ^= cpu->AF.r_8.h;
+      cpu->PC.r_16 += 1;
+      break;
+    case 0xC1:
+      printf ("\t\tPOP BC\n");
+      cpu->BC.r_8.l = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+      cpu->BC.r_8.h = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+      cpu->PC.r_16 += 1;
+      break;
+    case 0xC5:
+      printf ("\t\tPUSH BC\n");
+      map_gb_set_memory (cpu->map, cpu->SP.r_16--, cpu->BC.r_8.h);
+      map_gb_set_memory (cpu->map, cpu->SP.r_16--, cpu->BC.r_8.l);
+      cpu->PC.r_16 += 1;
+      break;
+    case 0xCB:
+      opcode = cpu->rom[cpu->PC.r_16 + 1];
+      switch (opcode) {
+        case 0x11:
+          printf ("\t\tRL C\n");
+          tmp = 0x80 & cpu->BC.r_8.l;
+          cpu->BC.r_8.l <<= 1;
+          if (cpu->flags->carry_flag)
+            cpu->BC.r_8.l += 1;
+          cpu->flags->negative_flag = FALSE;
+          cpu->flags->half_carry_flag = FALSE;
+          cpu->flags->carry_flag = tmp;
+          if (cpu->BC.r_8.l == 0)
+            cpu->flags->zero_flag = TRUE;
+          break;
+        case 0x7C:
+          printf ("\t\tBIT 7, H\n");
+          cpu->flags->negative_flag = FALSE;
+          cpu->flags->half_carry_flag = TRUE;
+          cpu->flags->zero_flag = cpu->HL.r_8.h & 0x80 ? FALSE : TRUE;
+          break;
+        default:
+          printf ("\t\tOPCODE[CB%02x] not implemented! [%04x]\n", opcode, cpu->PC.r_16);
+          break;
+      }
+      cpu->PC.r_16 += 2;
+      break;
+    case 0xCD:
+      printf ("\t\tCALL N\n");
+      REG16 tmp;
+      tmp.r_16 = cpu->PC.r_16 + 3;
+      map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.h);
+      map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.l);
+      cpu->PC.r_16 = cpu->rom[cpu->PC.r_16 + 1] | (cpu->rom[cpu->PC.r_16 + 2] << 8);
+      break;
+    case 0xE0:
+      printf ("\t\tLD (FF00 + %02x), A\n", cpu->rom[cpu->PC.r_16 + 1]);
+      map_gb_set_memory (cpu->map, 0xFF00 | cpu->rom[cpu->PC.r_16 + 1], cpu->AF.r_8.h);
+      cpu->PC.r_16 += 2;
+      break;
+    case 0xE2:
+      printf ("\t\tLD (FF00 + C), A\n");
+      map_gb_set_memory (cpu->map, 0xFF00 | cpu->BC.r_8.l, cpu->AF.r_8.h);
+      cpu->PC.r_16 += 1;
+      break;
+    default:
+      printf ("\t\tOPCODE[%02x] not implemented! [%04x]\n", opcode, cpu->PC.r_16);
       break;
   }
 }

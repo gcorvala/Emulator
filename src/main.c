@@ -19,6 +19,7 @@ main () {
   MapGB *map_gb;
   RomNES *rom_nes;
   char *tmp;
+  int i;
 
   printf ("Test types START\n");
 
@@ -77,22 +78,25 @@ main () {
   printf ("\trom_gb_check_logo = %s\n", rom_gb_check_logo (rom_gb) ? "TRUE" : "FALSE");
   printf ("\trom_gb_check_header = %s\n", rom_gb_check_header (rom_gb) ? "TRUE" : "FALSE");
   printf ("\trom_gb_check_full = %s\n", rom_gb_check_full (rom_gb) ? "TRUE" : "FALSE");
-  /*rom_gb_free (rom_gb);*/
+  printf ("\trom_gb_get_rom_memory (rom_gb, 0, 0x00A8) : %02x\n", rom_gb_get_rom_memory (rom_gb, 0, 0x00A8));
 
   printf ("Load RomGB END\n");
 
   printf ("Load CpuGB START\n");
 
   cpu_gb = cpu_gb_new ();
-  /*cpu_gb_free (cpu_gb);*/
+  map_gb = map_gb_new ();
+  map_gb_set_cpu (map_gb, cpu_gb);
+  map_gb_set_rom (map_gb, rom_gb);
+  cpu_gb_set_mapper (cpu_gb, map_gb);
+
+  for (i = 0; i < 0x6020; ++i)
+    cpu_gb_step (cpu_gb);
 
   printf ("Load CpuGB END\n");
 
   printf ("Load MapGB START\n");
 
-  map_gb = map_gb_new ();
-  map_gb_set_cpu (map_gb, cpu_gb);
-  map_gb_set_rom (map_gb, rom_gb);
   printf ("\tmap_gb_get_memory (0x0134) = %c\n", map_gb_get_memory (map_gb, 0x134));
   map_gb_free (map_gb);
   rom_gb_free (rom_gb);

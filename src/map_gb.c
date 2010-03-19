@@ -87,5 +87,5 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
 
 void
 map_gb_set_memory (MapGB *map, ADDR16 addr, BYTE value) {
-  printf ("%s : %p %p %p\n", FUNC, (void *) map, (void *) &addr, (void *) &value);
+  printf ("%s : $%04x %02x\n", FUNC, addr, value);
 }

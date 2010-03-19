@@ -6,7 +6,8 @@ OBJECTS = \
 	map_gb.o \
 	map_nes.o \
 	rom_gb.o \
-	rom_nes.o
+	rom_nes.o \
+	tile_gb.o
 
 BIN = main
 
