@@ -38,7 +38,7 @@ map_gb_set_rom (MapGB *map, RomGB *rom) {
 BYTE
 map_gb_get_memory (MapGB *map, ADDR16 addr) {
   BYTE result;
-  printf ("%s : $%04x\n", FUNC, addr);
+  /*printf ("%s : $%04x\n", FUNC, addr);*/
 
   if (map->rom == NULL || map->cpu == NULL)
     printf ("%s : rom or map are not set!\n", FUNC);
@@ -68,17 +68,19 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
     result = 0x00;
   }
   else if (addr < 0xFF4C) {
-    printf ("%s : not implemented!\n", FUNC);
-    result = 0x00;
+    printf ("%s : i/o ports not implemented!\n", FUNC);
+    result = 0x90;
   }
   else if (addr < 0xFF80) {
     printf ("%s : not implemented!\n", FUNC);
+    if (addr == 0xFF50) {
+      return 0x01;
+    }
     result = 0x00;
   }
   else if (addr < 0xFFFF) {
-    /*printf ("%s : access to switchable ram at [%04x] not implemented!\n", FUNC, addr);
-    result = 0x00;*/
-      result = map->tmp[addr - 0xFF80];
+    printf ("%s : High RAM access [%04x]\n", FUNC, addr);
+    result = map->tmp[addr - 0xFF80];
   }
   else {
     printf ("%s : access to Interrupt Enable Register not implemented!\n", FUNC);
@@ -90,7 +92,7 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
 
 void
 map_gb_set_memory (MapGB *map, ADDR16 addr, BYTE value) {
-  printf ("%s : $%04x %02x\n", FUNC, addr, value);
+  /*printf ("%s : $%04x %02x\n", FUNC, addr, value);*/
   if (addr >= 0xFF80 && addr < 0xFFFF)
     map->tmp[addr - 0xFF80] = value;
 }
