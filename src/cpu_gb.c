@@ -110,10 +110,14 @@ cpu_gb_step (CpuGB *cpu) {
   BOOL tmp;
 
   opcode = map_gb_get_memory (cpu->map, cpu->PC.r_16);
-  printf ("\t\t [0x%04x] [ticks = %u]", cpu->PC.r_16, cpu->ticks++);
+  printf ("\t\t [0x%04x]", cpu->PC.r_16);
 
   switch (opcode) {
     /* n h c z */
+    case 0x00:
+      printf ("\tNOP\n");
+      cpu->PC.r_16 += 1;
+      break;
     case 0x04:
       printf ("\tINC B\t\t[%02x -> %02x]\n", cpu->BC.r_8.h, cpu->BC.r_8.h + 1);
       cpu->BC.r_8.h++;
@@ -183,14 +187,15 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 2;
       break;
     case 0x17:
-      printf ("\tRL A\n");
+      printf ("\tRL A\t\t[A = %02x -> ", cpu->AF.r_8.h);
       tmp = 0x80 & cpu->AF.r_8.h;
       cpu->AF.r_8.h <<= 1;
-      if (cpu->flags->carry_flag)
+      if (cpu->flags->carry_flag == TRUE)
         cpu->AF.r_8.h += 1;
+      printf ("%02x]\n", cpu->AF.r_8.h);
       cpu->flags->negative_flag = FALSE;
       cpu->flags->half_carry_flag = FALSE;
-      cpu->flags->carry_flag = tmp;
+      cpu->flags->carry_flag = tmp ? TRUE : FALSE;
       cpu->flags->zero_flag = cpu->AF.r_8.h == 0 ? TRUE : FALSE;
       cpu->PC.r_16 += 1;
       break;
@@ -233,8 +238,7 @@ cpu_gb_step (CpuGB *cpu) {
       break;
     case 0x22:
       printf ("\t\tLD (HL+), A\n");
-      cpu->HL.r_16 = cpu->AF.r_8.h;
-      cpu->HL.r_16++;
+      map_gb_set_memory (cpu->map, cpu->HL.r_16++, cpu->AF.r_8.h);
       cpu->PC.r_16 += 1;
       break;
     case 0x23:
@@ -368,16 +372,17 @@ cpu_gb_step (CpuGB *cpu) {
       opcode = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       switch (opcode) {
         case 0x11:
-          printf ("\t\tRL C\n");
+          printf ("\tRL C\t\t[C = %02x -> ", cpu->BC.r_8.l);
           tmp = 0x80 & cpu->BC.r_8.l;
           cpu->BC.r_8.l <<= 1;
           if (cpu->flags->carry_flag)
             cpu->BC.r_8.l += 1;
           cpu->flags->negative_flag = FALSE;
           cpu->flags->half_carry_flag = FALSE;
-          cpu->flags->carry_flag = tmp;
+          cpu->flags->carry_flag = tmp ? TRUE : FALSE;
           if (cpu->BC.r_8.l == 0)
             cpu->flags->zero_flag = TRUE;
+          printf ("%02x | C = %u]\n", cpu->BC.r_8.l, cpu->flags->carry_flag);
           break;
         case 0x7C:
           printf ("\t\tBIT 7, H\n");
@@ -392,7 +397,7 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 2;
       break;
     case 0xCD:
-      printf ("\t\tCALL N\n");
+      printf ("\t\tCALL %04x\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) | (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8));
       REG16 tmp;
       tmp.r_16 = cpu->PC.r_16 + 3;
       map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.h);
@@ -428,7 +433,7 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 2;
       break;
     default:
-      printf ("\t\tOPCODE[%02x] not implemented! [%04x]\n", opcode, cpu->PC.r_16);
+      printf ("\tOPCODE [%02x] not implemented!\n", opcode);
       break;
   }
 }

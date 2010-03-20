@@ -77,9 +77,6 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
   }
   else if (addr < 0xFF80) {
     printf ("%s : not implemented!\n", FUNC);
-    if (addr == 0xFF50) {
-      return 0x01;
-    }
     result = 0x00;
   }
   else if (addr < 0xFFFF) {
@@ -96,7 +93,7 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
 
 void
 map_gb_set_memory (MapGB *map, ADDR16 addr, BYTE value) {
-  /*printf ("%s : $%04x %02x\n", FUNC, addr, value);*/
+  printf ("%s : $%04x %02x\n", FUNC, addr, value);
   if (addr >= 0x8000 && addr <= 0xA000) {
     printf ("%s : set memory into video ram!!!\n", FUNC);
     map->video_ram[addr - 0x8000] = value;
