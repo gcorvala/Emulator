@@ -90,7 +90,7 @@ main () {
   map_gb_set_rom (map_gb, rom_gb);
   cpu_gb_set_mapper (cpu_gb, map_gb);
 
-  for (i = 0; i < 0xAADF; ++i)
+  for (i = 0; i < 0xBAC0; ++i)
     cpu_gb_step (cpu_gb);
 
   printf ("Load CpuGB END\n");
