@@ -257,6 +257,11 @@ cpu_gb_step (CpuGB *cpu) {
         cpu->PC.r_16 += (INT8) map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       cpu->PC.r_16 += 2;
       break;
+    case 0x2E:
+      printf ("\tLD L, %02x\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
+      cpu->HL.r_8.l = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
+      cpu->PC.r_16 += 2;
+      break;
     case 0x31:
       cpu->SP.r_8.l = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       cpu->SP.r_8.h = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2);
@@ -272,6 +277,9 @@ cpu_gb_step (CpuGB *cpu) {
     case 0x3D:
       printf ("\t\tDEC A\n");
       cpu->AF.r_8.h--;
+      cpu->flags->negative_flag = TRUE;
+      cpu->flags->half_carry_flag = (cpu->AF.r_8.h & 0x0F) == 0x0F ? TRUE : FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h == 0 ? TRUE : FALSE;
       cpu->PC.r_16 += 1;
       break;
     case 0x3E:

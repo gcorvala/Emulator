@@ -9,6 +9,7 @@
 #include "cpu_gb.h"
 #include "rom_gb.h"
 #include "map_gb.h"
+#include "display_gb.h"
 
 #include "types.h"
 
@@ -90,7 +91,7 @@ main () {
   map_gb_set_rom (map_gb, rom_gb);
   cpu_gb_set_mapper (cpu_gb, map_gb);
 
-  for (i = 0; i < 0xBAC4; ++i)
+  for (i = 0; i < 0xBB40; ++i)
     cpu_gb_step (cpu_gb);
 
   printf ("Load CpuGB END\n");

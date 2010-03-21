@@ -3,6 +3,7 @@ CC = gcc -Wall -pedantic -O4 -Werror -std=gnu99
 OBJECTS = \
 	cpu_gb.o \
 	cpu_nes.o \
+	display_gb.o \
 	map_gb.o \
 	map_nes.o \
 	rom_gb.o \
