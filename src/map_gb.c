@@ -72,7 +72,6 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
     result = 0x00;
   }
   else if (addr < 0xFF4C) {
-    printf ("%s : i/o ports not implemented!\n", FUNC);
     result = 0x90;
   }
   else if (addr < 0xFF80) {
