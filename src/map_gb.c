@@ -80,8 +80,7 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
     result = 0x00;
   }
   else if (addr < 0xFFFF) {
-    printf ("%s : High RAM access [%04x]\n", FUNC, addr);
-    result = map->hram[addr - 0xFF80];
+    result = cpu_gb_get_hram_memory (map->cpu, addr - 0xFF80);
   }
   else {
     printf ("%s : access to Interrupt Enable Register not implemented!\n", FUNC);
@@ -97,10 +96,10 @@ map_gb_set_memory (MapGB *map, ADDR16 addr, BYTE value) {
   if (addr >= 0x8000 && addr <= 0xA000) {
     /*printf ("%s : set memory into video ram!!!\n", FUNC);*/
     map->video_ram[addr - 0x8000] = value;
-    printf ("%s : VIDEO MEMORY SET AT [%04x] FOR [%02x]\n", FUNC, addr, value);
+    /*printf ("%s : VIDEO MEMORY SET AT [%04x] FOR [%02x]\n", FUNC, addr, value);*/
   }
-  else if (addr >= 0xFE00 && addr <= 0xFEA0)
-    printf ("%s : set memory into video OAM!!!\n", FUNC);
+  /*else if (addr >= 0xFE00 && addr <= 0xFEA0)
+    printf ("%s : set memory into video OAM!!!\n", FUNC);*/
   else if (addr >= 0xFF80 && addr < 0xFFFF)
-    map->hram[addr - 0xFF80] = value;
+    cpu_gb_set_hram_memory (map->cpu, addr - 0xFF80, value);
 }
