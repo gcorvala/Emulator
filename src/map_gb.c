@@ -8,9 +8,9 @@
 struct _MapGB {
   CpuGB *cpu;
   RomGB *rom;
-  BYTE hram[0x80];
   BYTE video_ram[0x2000];
   BOOL bootrom;
+  BYTE FF42;
 };
 
 MapGB *
@@ -51,38 +51,21 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
       result = rom_gb_get_rom_memory (map->rom, 0, addr);
     }
   }
-  else if (addr < 0x8000)
+  else if (addr >= 0x4000 && addr < 0x8000)
     result = rom_gb_get_rom_memory (map->rom, 1, addr);
-  else if (addr < 0xA000)
+  else if (addr >= 0x8000 && addr < 0xA000)
     result = map->video_ram[addr - 0x8000];
-  else if (addr < 0xC000) {
-    printf ("%s : access to switchable ram at [%04x] not implemented!\n", FUNC, addr);
-    result = 0x00;
-  }
-  else if (addr < 0xE000)
+  else if (addr >= 0xC000 && addr < 0xE000)
     result = cpu_gb_get_ram_memory (map->cpu, addr - 0xC000);
-  else if (addr < 0xFE00)
-    result = cpu_gb_get_ram_memory (map->cpu, addr - 0xE000);
-  else if (addr < 0xFEA0) {
-    printf ("%s : not implemented!\n", FUNC);
-    result = 0x00;
-  }
-  else if (addr < 0xFF00) {
-    printf ("%s : not implemented!\n", FUNC);
-    result = 0x00;
-  }
-  else if (addr < 0xFF4C) {
-    result = 0x90;
-  }
-  else if (addr < 0xFF80) {
-    printf ("%s : not implemented!\n", FUNC);
-    result = 0x00;
-  }
-  else if (addr < 0xFFFF) {
+  else if (addr == 0xFF42)
+    result = map->FF42;
+  else if (addr >= 0xFF00 && addr < 0xFF4C)
+    result = 0x90; 
+  else if (addr >= 0xFF80 && addr < 0xFFFF)
     result = cpu_gb_get_hram_memory (map->cpu, addr - 0xFF80);
-  }
   else {
-    printf ("%s : access to Interrupt Enable Register not implemented!\n", FUNC);
+    printf ("!!! READ MEMORY NOT YET IMPLEMENTED!!! ");
+    printf ("%s : $%04x\n", FUNC, addr);
     result = 0x00;
   }
 
@@ -91,14 +74,15 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
 
 void
 map_gb_set_memory (MapGB *map, ADDR16 addr, BYTE value) {
-  /*printf ("%s : $%04x %02x\n", FUNC, addr, value);*/
-  if (addr >= 0x8000 && addr <= 0xA000) {
-    /*printf ("%s : set memory into video ram!!!\n", FUNC);*/
+  /* printf ("%s : $%04x %02x\n", FUNC, addr, value); */
+  if (addr >= 0x8000 && addr <= 0xA000)
     map->video_ram[addr - 0x8000] = value;
-    /*printf ("%s : VIDEO MEMORY SET AT [%04x] FOR [%02x]\n", FUNC, addr, value);*/
-  }
-  /*else if (addr >= 0xFE00 && addr <= 0xFEA0)
-    printf ("%s : set memory into video OAM!!!\n", FUNC);*/
   else if (addr >= 0xFF80 && addr < 0xFFFF)
     cpu_gb_set_hram_memory (map->cpu, addr - 0xFF80, value);
+  else if (addr == 0xFF42)
+    map->FF42 = value;
+  else {
+    printf ("!!! WRITE MEMORY NOT YET IMPLEMENTED!!! ");
+    printf ("%s : $%04x %02x\n", FUNC, addr, value);
+  }
 }
