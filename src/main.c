@@ -79,6 +79,7 @@ main () {
 
   display_gb = display_gb_new (map_gb);
   display_gb_print_test (display_gb);
+  display_gb_background_normal (display_gb);
   display_gb_free (display_gb);
 
   printf ("Test TileGB END\n");

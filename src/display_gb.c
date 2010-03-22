@@ -56,6 +56,40 @@ display_gb_get_tile (DisplayGB *display, UINT8 n) {
 }
 
 void
+display_gb_background_normal (DisplayGB *display) {
+  int i, j, k, l;
+  BYTE tile_id;
+  TileGB *tile;
+  int bg[32*8][32*8];
+
+  printf ("%s :\n", FUNC);
+
+  for (i = 0; i < (32*8); ++i)
+    for (j = 0; j < (32*8); ++j)
+      bg[i][j] = 9;
+
+  for (i = 0; i < 32; ++i) {
+    for (j = 0; j < 32; ++j) {
+      tile_id = map_gb_get_memory (display->map, 0x9800 + j + i * 32);
+      tile = display_gb_get_tile (display, tile_id);
+      for (k = 0; k < 8; ++k) {
+        for (l = 0; l < 8; ++l) {
+          bg[i * 8 + k][j * 8 + l] = tile_gb_get_pixel (tile, k, l);
+        }
+      }
+      tile_gb_free (tile);
+    }
+  }
+
+  for (i = 0; i < (32*8); ++i) {
+    for (j = 0; j < (20*8); ++j) {
+      printf ("%d", bg[i][j]);
+    }
+    printf ("\n");
+  }
+}
+
+void
 display_gb_print_test (DisplayGB *display) {
   TileGB *tile;
   int logo[16][96];
