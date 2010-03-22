@@ -6,6 +6,7 @@ typedef struct _DisplayGB DisplayGB;
 typedef struct _MapGB     MapGB;
 typedef struct _PixelGB   PixelGB;
 typedef struct _RomGB     RomGB;
+typedef struct _SpriteGB  SpriteGB;
 typedef struct _TileGB    TileGB;
 
 typedef struct _CpuNES CpuNES;

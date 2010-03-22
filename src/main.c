@@ -2,10 +2,6 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
-#include "cpu_nes.h"
-#include "rom_nes.h"
-#include "map_nes.h"
-
 #include "cpu_gb.h"
 #include "rom_gb.h"
 #include "map_gb.h"
@@ -18,7 +14,6 @@ main () {
   RomGB *rom_gb;
   CpuGB *cpu_gb;
   MapGB *map_gb;
-  RomNES *rom_nes;
   char *tmp;
   int i;
 
@@ -43,24 +38,6 @@ main () {
   printf ("Test types END\n");
 
   printf ("Emulator START\n");
-
-  printf ("Load RomNES START\n");
-
-  rom_nes = rom_nes_new ("../data/super.nes");
-
-  printf ("\trom_nes_get_prg_n_pages = %u\n", rom_nes_get_prg_n_pages (rom_nes));
-  printf ("\trom_nes_get_prg_size = %lu KB\n", (unsigned long) rom_nes_get_prg_size (rom_nes) / 1024);
-  printf ("\trom_nes_get_chr_n_pages = %u\n", rom_nes_get_chr_n_pages (rom_nes));
-  printf ("\trom_nes_get_chr_size = %lu KB\n", (unsigned long) rom_nes_get_chr_size (rom_nes) / 1024);
-  printf ("\trom_nes_get_mirroring_flag = %d\n", rom_nes_get_mirroring_flag (rom_nes));
-  printf ("\trom_nes_get_sram_flag = %d\n", rom_nes_get_sram_flag (rom_nes));
-  printf ("\trom_nes_get_trainer_flag = %d\n", rom_nes_get_trainer_flag (rom_nes));
-  printf ("\trom_nes_get_four_screen_flag = %d\n", rom_nes_get_four_screen_flag (rom_nes));
-  printf ("\trom_nes_get_mapper_id = %d\n", rom_nes_get_mapper_id (rom_nes));
-
-  printf ("Load RomNES END\n");
-
-  rom_nes_free (rom_nes);
 
   printf ("Load RomGB START\n");
 
