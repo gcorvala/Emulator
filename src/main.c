@@ -5,6 +5,7 @@
 #include "cpu_gb.h"
 #include "rom_gb.h"
 #include "map_gb.h"
+#include "tile_gb.h"
 #include "display_gb.h"
 
 #include "types.h"
@@ -14,6 +15,7 @@ main () {
   RomGB *rom_gb;
   CpuGB *cpu_gb;
   MapGB *map_gb;
+  DisplayGB *display_gb;
   char *tmp;
   int i;
 
@@ -72,6 +74,14 @@ main () {
     cpu_gb_step (cpu_gb);
 
   printf ("Load CpuGB END\n");
+
+  printf ("Test TileGB START\n");
+
+  display_gb = display_gb_new (map_gb);
+  display_gb_print_test (display_gb);
+  display_gb_free (display_gb);
+
+  printf ("Test TileGB END\n");
 
   printf ("Load MapGB START\n");
 

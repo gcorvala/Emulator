@@ -3,12 +3,15 @@
 
 #include "types.h"
 
-#include <stddef.h>
-
-TileGB * tile_gb_new        (BYTE one, BYTE two);
+TileGB * tile_gb_new        (BYTE l11, BYTE l12,
+                             BYTE l21, BYTE l22,
+                             BYTE l31, BYTE l32,
+                             BYTE l41, BYTE l42,
+                             BYTE l51, BYTE l52,
+                             BYTE l61, BYTE l62,
+                             BYTE l71, BYTE l72,
+                             BYTE l81, BYTE l82);
 void     tile_gb_free       (TileGB *tile);
-size_t * tile_gb_get_height (TileGB *tile);
-size_t * tile_gb_get_width  (TileGB *tile);
-void     tile_gb_get_size   (TileGB *tile, size_t *height, size_t *width);
-
+int      tile_gb_get_pixel  (TileGB *tile, UINT8 x, UINT8 y);
+void     tile_gb_printf     (TileGB *tile);
 #endif
