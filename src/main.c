@@ -20,7 +20,7 @@ main (int argc, char **argv) {
   TileGB *tile_gb;
   BackgroundGB *background_gb;
   char *tmp;
-  INT32 i, j;
+  INT32 i, j, k;
   BYTE array[16] = { 0x7C, 0x7C, 0x00, 0xC6, 0xC6, 0x00, 0x00, 0xFF, 0xC6, 0xC6, 0x00, 0xC6, 0xC6, 0x00, 0x00, 0x00};
 
   printf ("argc : %d\n", argc);
@@ -71,20 +71,6 @@ main (int argc, char **argv) {
 
   printf ("Load RomGB END\n");
 
-  printf ("Load CpuGB START\n");
-
-  cpu_gb = cpu_gb_new ();
-  map_gb = map_gb_new ();
-  background_gb = background_gb_new (map_gb);
-  map_gb_set_cpu (map_gb, cpu_gb);
-  map_gb_set_rom (map_gb, rom_gb);
-  cpu_gb_set_mapper (cpu_gb, map_gb);
-
-  for (i = 0; i < 0xBB40; ++i)
-    cpu_gb_step (cpu_gb);
-
-  printf ("Load CpuGB END\n");
-
   printf ("Test TileGB START\n");
 
   tile_gb = tile_gb_new (array);
@@ -98,58 +84,66 @@ main (int argc, char **argv) {
 
   printf ("Test TileGB END\n");
 
-  printf ("Test BackgroundGB START\n");
+  printf ("Load CpuGB START\n");
 
-  /*printf ("+");
-  for (i = 0; i < (32*8); ++i)
-    printf ("-");
-  printf ("+\n");
-  for (i = 0; i < (32*8); ++i) {
-    printf ("|");
-    for (j = 0; j < (32*8); ++j) {
-      printf ("%c", background_gb_get_pixel (background_gb, j, i) ? '0' : ' ');
-    }
-    printf ("|\n");
-  }
-  printf ("+");
-  for (i = 0; i < (32*8); ++i)
-    printf ("-");
-  printf ("+\n");*/
+  cpu_gb = cpu_gb_new ();
+  map_gb = map_gb_new ();
+  background_gb = background_gb_new (map_gb);
+  map_gb_set_cpu (map_gb, cpu_gb);
+  map_gb_set_rom (map_gb, rom_gb);
+  cpu_gb_set_mapper (cpu_gb, map_gb);
 
-  if (SDL_Init (SDL_INIT_VIDEO) == 0) {
+  {
     SDL_Surface *surface;
     SDL_Rect *bg;
-    Uint32 color;
+    Uint32 black, white;
     Uint32 *pixmem;
 
-    surface = SDL_SetVideoMode (background_gb_get_width (background_gb), background_gb_get_height (background_gb), 32, SDL_HWSURFACE);
-    color = SDL_MapRGB (surface->format, 0xFF, 0xFF, 0xFF);
-    bg = calloc (sizeof (SDL_Rect), 1);
-    bg->w = background_gb_get_width (background_gb);
-    bg->h = background_gb_get_height (background_gb);
-    int i = SDL_FillRect (surface, bg, color);
+    if (SDL_Init (SDL_INIT_VIDEO) != 0) {
+      return 1;
+    }
 
-    color = SDL_MapRGB (surface->format, 0x00, 0x00, 0x00);
-    for (i = 0; i < (INT32) background_gb_get_height (background_gb); ++i) {
-      for (j = 0; j < (INT32) background_gb_get_width (background_gb); ++j) {
-        if (background_gb_get_pixel (background_gb, j, i)) {
-          SDL_LockSurface (surface);
-          pixmem = ((Uint32*) (surface->pixels) + j + i * surface->w);
-          *pixmem = color;
-          SDL_UnlockSurface (surface);
+    surface = SDL_SetVideoMode (background_gb_get_window_width (background_gb), background_gb_get_window_height (background_gb), 32, SDL_HWSURFACE);
+
+    black = SDL_MapRGB (surface->format, 0x00, 0x00, 0x00);
+    white = SDL_MapRGB (surface->format, 0xFF, 0xFF, 0xFF);
+
+    bg = calloc (sizeof (SDL_Rect), 1);
+    bg->w = background_gb_get_window_width (background_gb);
+    bg->h = background_gb_get_window_height (background_gb);
+
+    SDL_FillRect (surface, bg, white);
+
+    for (k = 0; k < 0xBB40; ++k) {
+      cpu_gb_step (cpu_gb);
+ 
+      if (k % 0x100 == 0) {
+        SDL_FillRect (surface, bg, white);
+        for (i = 0; i < (INT32) background_gb_get_window_height (background_gb); ++i) {
+          for (j = 0; j < (INT32) background_gb_get_window_width (background_gb); ++j) {
+            if (background_gb_get_window_pixel (background_gb, j, i)) {
+              SDL_LockSurface (surface);
+              pixmem = ((Uint32*) (surface->pixels) + j + i * surface->w);
+              *pixmem = black;
+              SDL_UnlockSurface (surface);
+            }
+          }
         }
+        SDL_UpdateRect (surface, 0, 0, 0, 0);
       }
     }
 
-    SDL_UpdateRect (surface, 0, 0, 0, 0);
+    free (bg);
 
+    SDL_UpdateRect (surface, 0, 0, 0, 0);
     SDL_Delay (3000);
+    
     SDL_FreeSurface (surface);
   }
 
   background_gb_free (background_gb);
 
-  printf ("Test BackgroundGB END\n");
+  printf ("Load CpuGB END\n");
 
   printf ("Load MapGB START\n");
 
