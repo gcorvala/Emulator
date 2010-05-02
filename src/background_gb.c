@@ -62,11 +62,6 @@ background_gb_get_tile (BackgroundGB *background, INT8 n) {
   ADDR16 tile_data;
   int i;
 
-  /*if (n >= 0xC0) {
-    printf ("%s !!! tile number is invalid %u (max 192) !!!\n", FUNC, n);
-    return NULL;
-  }*/
-
   tile_data = map_gb_get_memory (background->map, 0xFF40) & 0x10 ? 0x8000 : 0x9000;
   for (i = 0; i < 16; ++i) {
     bytes[i] = map_gb_get_memory (background->map, tile_data + n * 16 + i);
