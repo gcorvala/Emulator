@@ -115,10 +115,11 @@ cpu_gb_set_mapper (CpuGB *cpu, MapGB *map) {
   cpu->map = map;
 }
 
-void
+UINT8
 cpu_gb_step (CpuGB *cpu) {
   BYTE opcode = 0;
   BOOL tmp;
+  UINT8 cycles = 0;
 
   opcode = map_gb_get_memory (cpu->map, cpu->PC.r_16);
   printf ("\t[0x%04x]", cpu->PC.r_16);
@@ -128,6 +129,14 @@ cpu_gb_step (CpuGB *cpu) {
     case 0x00: /* OK */
       printf ("\tNOP\n");
       cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
+    case 0x01:
+      printf ("\tLD BC, %02x%02x\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
+      cpu->BC.r_8.l = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
+      cpu->BC.r_8.h = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2);
+      cpu->PC.r_16 += 3;
+      cycles = 12;
       break;
     case 0x04: /* OK */
       printf ("\tINC B\t\t\t[%02x -> %02x]\n", cpu->BC.r_8.h, cpu->BC.r_8.h + 1);
@@ -136,6 +145,7 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->flags->half_carry_flag = (cpu->BC.r_8.h & 0x1F) == 0x10 ? TRUE : FALSE;
       cpu->flags->zero_flag = cpu->BC.r_8.h == 0x00 ? TRUE : FALSE; 
       cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x05: /* OK */
       printf ("\tDEC B\t\t\t[%02x -> %02x]\n", cpu->BC.r_8.h, cpu->BC.r_8.h - 1);
@@ -144,11 +154,28 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->flags->half_carry_flag = (cpu->BC.r_8.h & 0x0F) == 0x0F ? TRUE : FALSE;
       cpu->flags->zero_flag = cpu->BC.r_8.h == 0 ? TRUE : FALSE;
       cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x06: /* OK */
       printf ("\tLD B, %02x\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
       cpu->BC.r_8.h = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       cpu->PC.r_16 += 2;
+      cycles = 8;
+      break;
+    case 0x09:
+      printf ("\tADD HL, BC\t\t\t[HL = %04x | BC = %04x]\n", cpu->HL.r_16, cpu->BC.r_16);
+      cpu->HL.r_16 += cpu->BC.r_16;
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = (cpu->HL.r_8.h & 0x0F) + (cpu->BC.r_8.h & 0x0F) > 0x0F ? TRUE : FALSE;
+      cpu->flags->carry_flag = cpu->HL.r_16 + cpu->BC.r_16 > 0xFFFF ? TRUE : FALSE;
+      cpu->PC.r_16 += 1;
+      cycles = 8;
+      break;
+    case 0x0B:
+      printf ("\tDEC BC\t\t\t[%04x -> %04x]\n", cpu->BC.r_16, cpu->BC.r_16 - 1);
+      cpu->BC.r_16--;
+      cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0x0C: /* OK */
       printf ("\tINC C\t\t\t[%02x -> %02x]\n", cpu->BC.r_8.l, cpu->BC.r_8.l + 1);
@@ -157,6 +184,7 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->flags->half_carry_flag = (cpu->BC.r_8.l & 0x1F) == 0x10 ? TRUE : FALSE;
       cpu->flags->zero_flag = cpu->BC.r_8.l == 0x00 ? TRUE : FALSE; 
       cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x0D: /* OK */
       printf ("\tDEC C\t\t\t[%02x -> %02x]\n", cpu->BC.r_8.l, cpu->BC.r_8.l - 1);
@@ -165,22 +193,32 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->flags->half_carry_flag = (cpu->BC.r_8.l & 0x0F) == 0x0F ? TRUE : FALSE;
       cpu->flags->zero_flag = cpu->BC.r_8.l == 0 ? TRUE : FALSE;
       cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x0E: /* OK */
       printf ("\tLD C, %02x\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
       cpu->BC.r_8.l = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       cpu->PC.r_16 += 2;
+      cycles = 8;
       break;
     case 0x11: /* OK */
       printf ("\tLD DE, %02x%02x\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
       cpu->DE.r_8.l = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       cpu->DE.r_8.h = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2);
       cpu->PC.r_16 += 3;
+      cycles = 12;
+      break;
+    case 0x12:
+      printf ("\tLD (DE), A\t[DE = %04x | (DE) = %02x | A = %02x]\n", cpu->DE.r_16, map_gb_get_memory (cpu->map, cpu->DE.r_16), cpu->AF.r_8.h);
+      map_gb_set_memory (cpu->map, cpu->DE.r_16, cpu->AF.r_8.h);
+      cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0x13: /* OK */
       printf ("\tINC DE\t\t\t[%04x -> %04x]\n", cpu->DE.r_16, cpu->DE.r_16 + 1);
       cpu->DE.r_16++;
       cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0x15: /* OK */
       printf ("\tDEC D\t\t\t[%02x -> %02x]\n", cpu->DE.r_8.h, cpu->DE.r_8.h - 1);
@@ -189,11 +227,13 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->flags->half_carry_flag = (cpu->DE.r_8.h & 0x0F) == 0x0F ? TRUE : FALSE;
       cpu->flags->zero_flag = cpu->DE.r_8.h == 0 ? TRUE : FALSE;
       cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x16: /* OK */
       printf ("\tLD D, %02x\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
       cpu->DE.r_8.h = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       cpu->PC.r_16 += 2;
+      cycles = 8;
       break;
     case 0x17: /* OK */
       printf ("\tRL A\t\t\t[A = %02x -> %02x]\n", cpu->AF.r_8.h, (cpu->AF.r_8.h << 1) + (cpu->flags->carry_flag ? 1 : 0));
@@ -205,15 +245,18 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->flags->carry_flag = tmp ? TRUE : FALSE;
       cpu->flags->zero_flag = cpu->AF.r_8.h == 0 ? TRUE : FALSE;
       cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x18: /* OK */
       printf ("\tJR %d \t\t\t[to -> %04x]\n", (INT8) map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->PC.r_16 + (INT8) map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) + 2);
       cpu->PC.r_16 += (INT8) map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) + 2;
+      cycles = 8;
       break;
     case 0x1A: /* OK */
       printf ("\tLD A, (DE)\t\t[(%04x) -> A]\n", cpu->DE.r_16);
       cpu->AF.r_8.h = map_gb_get_memory (cpu->map, cpu->DE.r_16);
       cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0x1D: /* OK */
       printf ("\tDEC E\t\t\t[%02x -> %02x]\n", cpu->DE.r_8.l, cpu->DE.r_8.l - 1);
@@ -222,31 +265,37 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->flags->half_carry_flag = (cpu->DE.r_8.l & 0x0F) == 0x0F ? TRUE : FALSE;
       cpu->flags->zero_flag = cpu->DE.r_8.l == 0 ? TRUE : FALSE;
       cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x1E: /* OK */
       printf ("\tLD E, %02x\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
       cpu->DE.r_8.l = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       cpu->PC.r_16 += 2;
+      cycles = 8;
       break;
     case 0x20: /* OK */
       printf ("\tJR NZ, %d\t\t[Z = %s -> %04x]\n", (INT8) map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->flags->zero_flag ? "TRUE" : "FALSE", cpu->PC.r_16 + (INT8) map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) + 2);
       cpu->PC.r_16 += cpu->flags->zero_flag ? 2 : (INT8) map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) + 2;
+      cycles = 8;
       break;
     case 0x21: /* OK */
       printf ("\tLD HL, %04x\n", (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8) | map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
       cpu->HL.r_8.l = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       cpu->HL.r_8.h = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2);
       cpu->PC.r_16 += 3;
+      cycles = 12;
       break;
     case 0x22: /* OK */
       printf ("\tLD (HL+), A\t\t[HL = %04x | A = %02x]\n", cpu->HL.r_16, cpu->AF.r_8.h);
       map_gb_set_memory (cpu->map, cpu->HL.r_16++, cpu->AF.r_8.h);
       cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0x23: /* OK */
       printf ("\tINC HL\t\t\t[%04x -> %04x]\n", cpu->HL.r_16, cpu->HL.r_16 + 1);
       cpu->HL.r_16++;
       cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0x24: /* OK */
       printf ("\tINC H\t\t\t[%02x -> %02x]\n", cpu->HL.r_8.h, cpu->HL.r_8.h + 1);
@@ -255,27 +304,44 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->flags->half_carry_flag = (cpu->HL.r_8.h & 0x1F) == 0x10 ? TRUE : FALSE;
       cpu->flags->zero_flag = cpu->HL.r_8.h == 0x00 ? TRUE : FALSE; 
       cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x28: /* OK */
       printf ("\tJR Z, %d\t\t[Z = %s -> %04x]\n", (INT8) map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->flags->zero_flag ? "TRUE" : "FALSE", cpu->PC.r_16 + (INT8) map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) + 2);
       cpu->PC.r_16 += cpu->flags->zero_flag ? (INT8) map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) + 2 : 2;
+      cycles = 8;
+      break;
+    case 0x2A: /* OK */
+      printf ("\tLD A, (HL+)\t[HL = %04x & (HL) = %02x]\n", cpu->HL.r_16, map_gb_get_memory (cpu->map, cpu->HL.r_16));
+      cpu->AF.r_8.h = map_gb_get_memory (cpu->map, cpu->HL.r_16++);
+      cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0x2E: /* OK */
       printf ("\tLD L, %02x\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
       cpu->HL.r_8.l = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       cpu->PC.r_16 += 2;
+      cycles = 8;
       break;
     case 0x31:
       cpu->SP.r_8.l = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       cpu->SP.r_8.h = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2);
       printf ("\tLD SP, %04x\n", cpu->SP.r_16);
       cpu->PC.r_16 += 3;
+      cycles = 12;
       break;
     case 0x32:
       printf ("\tLD (HL-), A\n");
       map_gb_set_memory (cpu->map, cpu->HL.r_16, cpu->AF.r_8.h);
       cpu->HL.r_16 -= 1;
       cpu->PC.r_16 += 1;
+      cycles = 8;
+      break;
+    case 0x3A: /* OK */
+      printf ("\tLD A, (HL-)\t\t[A = %02x | HL = %04x | (HL) = %02x]\n", cpu->AF.r_8.h, cpu->HL.r_16, map_gb_get_memory (cpu->map, cpu->HL.r_16));
+      cpu->AF.r_8.h = map_gb_get_memory (cpu->map, cpu->HL.r_16--);
+      cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0x3D:
       printf ("\tDEC A\t\t[A = %02x -> %02x]\n", cpu->AF.r_8.h, cpu->AF.r_8.h - 1);
@@ -284,60 +350,93 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->flags->half_carry_flag = (cpu->AF.r_8.h & 0x0F) == 0x0F ? TRUE : FALSE;
       cpu->flags->zero_flag = cpu->AF.r_8.h == 0 ? TRUE : FALSE;
       cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x3E:
       printf ("\tLD A, %02x\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
       cpu->AF.r_8.h = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       cpu->PC.r_16 += 2;
+      cycles = 8;
       break;
     case 0x4F:
       printf ("\tLD C, A\n");
       cpu->BC.r_8.l = cpu->AF.r_8.h;
       cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x57:
       printf ("\tLD D, A\n");
       cpu->DE.r_8.h = cpu->AF.r_8.h;
       cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x67:
       printf ("\tLD H, A\n");
       cpu->HL.r_8.h = cpu->AF.r_8.h;
       cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
+    case 0x6F: /* OK */
+      printf ("\tLD L, A\t\t\t[A = %02x]\n", cpu->AF.r_8.h);
+      cpu->HL.r_8.l = cpu->AF.r_8.h;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x7C:
       printf ("\tLD A, H\n");
       cpu->AF.r_8.h = cpu->HL.r_8.h;
       cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x77:
       printf ("\tLD (HL), A\n");
       map_gb_set_memory (cpu->map, cpu->HL.r_16, cpu->AF.r_8.h);
       cpu->PC.r_16 += 1;
+      cycles= 8;
       break;
     case 0x78:
       printf ("\tLD A, B\n");
       cpu->AF.r_8.h = cpu->BC.r_8.h;
       cpu->PC.r_16 += 1;
+      cycles = 8;
+      break;
+    case 0x79: /* OK */
+      printf ("\tLD A, C\t\t\t[A = %02x | C = %02x]\n", cpu->AF.r_8.h, cpu->BC.r_8.l);
+      cpu->AF.r_8.h = cpu->BC.r_8.l;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x7B:
       printf ("\tLD A, E\n");
       cpu->AF.r_8.h = cpu->DE.r_8.l;
       cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0x7D:
       printf ("\tLD A, L\n");
       cpu->AF.r_8.h = cpu->HL.r_8.l;
       cpu->PC.r_16 += 1;
+      cycles = 8;
+      break;
+    case 0x85:
+      printf ("\tADD A, L\t[L = %02x | A = %02x]\n", cpu->HL.r_8.l, cpu->AF.r_8.h);
+      cpu->AF.r_8.h += cpu->HL.r_8.l;
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = (cpu->AF.r_8.h & 0x0F) + (cpu->HL.r_8.l & 0x0F) > 0x0F ? TRUE : FALSE;
+      cpu->flags->carry_flag = cpu->AF.r_8.h + cpu->HL.r_8.l > 0xFF ? TRUE : FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h == 0 ? TRUE : FALSE;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x86:
-      printf ("\tADD (HL)\t[HL = %04x | (HL) = %02x | A = %02x -> A = %02x]\n", cpu->HL.r_16, map_gb_get_memory (cpu->map, cpu->HL.r_16), cpu->AF.r_8.h, cpu->AF.r_8.h + map_gb_get_memory (cpu->map, cpu->HL.r_16));
+      printf ("\tADD A, (HL)\t[HL = %04x | (HL) = %02x | A = %02x -> A = %02x]\n", cpu->HL.r_16, map_gb_get_memory (cpu->map, cpu->HL.r_16), cpu->AF.r_8.h, cpu->AF.r_8.h + map_gb_get_memory (cpu->map, cpu->HL.r_16));
       cpu->AF.r_8.h += map_gb_get_memory (cpu->map, cpu->HL.r_16);
       cpu->flags->negative_flag = FALSE;
       cpu->flags->half_carry_flag = (cpu->AF.r_8.h & 0x0F) + (map_gb_get_memory (cpu->map, cpu->HL.r_16) & 0x0F) > 0x0F ? TRUE : FALSE;
       cpu->flags->carry_flag = cpu->AF.r_8.h + map_gb_get_memory (cpu->map, cpu->HL.r_16) > 0xFF ? TRUE : FALSE;
       cpu->flags->zero_flag = cpu->AF.r_8.h == 0 ? TRUE : FALSE;
       cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0x90:
       printf ("\tSUB B <- TODO set half_carry\n");
@@ -348,11 +447,42 @@ cpu_gb_step (CpuGB *cpu) {
         cpu->flags->zero_flag = TRUE;
       cpu->flags->negative_flag = TRUE;
       cpu->PC.r_16 += 1;
+      cycles = 8;
+      break;
+    case 0xA7: /* OK */
+      printf ("\tAND A\t\t\t[A = %02x]\n", cpu->AF.r_8.h);
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = TRUE;
+      cpu->flags->carry_flag = FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h ? FALSE : TRUE;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0xAF:
       printf ("\tXOR A\n");
       cpu->AF.r_8.h ^= cpu->AF.r_8.h;
       cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
+    case 0xB0: /* OK */
+      printf ("\tOR B\t\t\t[A = %02x | B = %02x]\n", cpu->AF.r_8.h, cpu->BC.r_8.h);
+      cpu->AF.r_8.h = cpu->AF.r_8.h | cpu->BC.r_8.h;
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = FALSE;
+      cpu->flags->carry_flag = FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h ? FALSE : TRUE;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
+    case 0xB1: /* OK */
+      printf ("\tOR C\t\t\t[A = %02x | C = %02x]\n", cpu->AF.r_8.h, cpu->BC.r_8.l);
+      cpu->AF.r_8.h = cpu->AF.r_8.h | cpu->BC.r_8.l;
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = FALSE;
+      cpu->flags->carry_flag = FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h ? FALSE : TRUE;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0xBE:
       printf ("\tCP (HL)\t\t[A = %02x | (%04x) = %02x]\n", cpu->AF.r_8.h, cpu->HL.r_16, map_gb_get_memory (cpu->map, cpu->HL.r_16));
@@ -361,23 +491,62 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->flags->carry_flag = cpu->AF.r_8.h < map_gb_get_memory (cpu->map, cpu->HL.r_16) ? TRUE : FALSE;
       cpu->flags->zero_flag = cpu->AF.r_8.h == map_gb_get_memory (cpu->map, cpu->HL.r_16) ? TRUE : FALSE;
       cpu->PC.r_16 += 1;
+      cycles = 8;
+      break;
+    case 0xC0:
+      printf ("\tRET NZ\n");
+      if (cpu->flags->zero_flag == FALSE) {
+        cpu->PC.r_8.l = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+        cpu->PC.r_8.h = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+      }
+      else
+        cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0xC1:
       printf ("\tPOP BC\n");
       cpu->BC.r_8.l = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
       cpu->BC.r_8.h = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
       cpu->PC.r_16 += 1;
+      cycles = 12;
+      break;
+    case 0xC3: /* OK */
+      printf ("\tJP %02x%02x\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
+      cpu->PC.r_16 = (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8) | map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
+      cycles = 12;
       break;
     case 0xC5:
       printf ("\tPUSH BC\n");
       map_gb_set_memory (cpu->map, cpu->SP.r_16--, cpu->BC.r_8.h);
       map_gb_set_memory (cpu->map, cpu->SP.r_16--, cpu->BC.r_8.l);
       cpu->PC.r_16 += 1;
+      cycles = 16;
+      break;
+    case 0xC6:
+      printf ("\tADD A, %02x\t\t[A = %02x]\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->AF.r_8.h);
+      cpu->AF.r_8.h += map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = (cpu->AF.r_8.h & 0x0F) + (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) & 0x0F) > 0x0F ? TRUE : FALSE;
+      cpu->flags->carry_flag = cpu->AF.r_8.h + map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) > 0xFF ? TRUE : FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h == 0 ? TRUE : FALSE;
+      cpu->PC.r_16 += 2;
+      cycles = 8;
+      break;
+    case 0xC8:
+      printf ("\tRET Z\n");
+      if (cpu->flags->zero_flag == TRUE) {
+        cpu->PC.r_8.l = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+        cpu->PC.r_8.h = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+      }
+      else
+        cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0xC9:
       printf ("\tRET\n");
       cpu->PC.r_8.l = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
       cpu->PC.r_8.h = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+      cycles = 8;
       break;
     case 0xCB:
       opcode = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
@@ -394,12 +563,54 @@ cpu_gb_step (CpuGB *cpu) {
           if (cpu->BC.r_8.l == 0)
             cpu->flags->zero_flag = TRUE;
           printf ("%02x | C = %u]\n", cpu->BC.r_8.l, cpu->flags->carry_flag);
+          cycles = 8;
           break;
         case 0x7C:
           printf ("\tBIT 7, H\n");
           cpu->flags->negative_flag = FALSE;
           cpu->flags->half_carry_flag = TRUE;
           cpu->flags->zero_flag = cpu->HL.r_8.h & 0x80 ? FALSE : TRUE;
+          cycles = 8; /* TO CHECK */
+          break;
+        case 0x80: /* OK */
+          printf ("\tRES 0, B\t\t\t[B = %02x]\n", cpu->BC.r_8.h);
+          cpu->BC.r_8.h &= 0xFE;
+          cycles = 8;
+          break;
+        case 0x81: /* OK */
+          printf ("\tRES 0, C\t\t\t[C = %02x]\n", cpu->BC.r_8.l);
+          cpu->BC.r_8.l &= 0xFE;
+          cycles = 8;
+          break;
+        case 0x82: /* OK */
+          printf ("\tRES 0, D\t\t\t[D = %02x]\n", cpu->DE.r_8.h);
+          cpu->DE.r_8.h &= 0xFE;
+          cycles = 8;
+          break;
+        case 0x83: /* OK */
+          printf ("\tRES 0, E\t\t\t[E = %02x]\n", cpu->DE.r_8.l);
+          cpu->DE.r_8.l &= 0xFE;
+          cycles = 8;
+          break;
+        case 0x84: /* OK */
+          printf ("\tRES 0, H\t\t\t[H = %02x]\n", cpu->HL.r_8.h);
+          cpu->HL.r_8.h &= 0xFE;
+          cycles = 8;
+          break;
+        case 0x85: /* OK */
+          printf ("\tRES 0, L\t\t\t[L = %02x]\n", cpu->HL.r_8.l);
+          cpu->HL.r_8.l &= 0xFE;
+          cycles = 8;
+          break;
+        case 0x86: /* OK */
+          printf ("\tRES 0, (HL)\t\t\t[HL = %04x | (HL) = %02x]\n", cpu->HL.r_16, map_gb_get_memory (cpu->map, cpu->HL.r_16));
+          map_gb_set_memory (cpu->map, cpu->HL.r_16, map_gb_get_memory (cpu->map, cpu->HL.r_16) & 0xFE);
+          cycles = 8;
+          break;
+        case 0x87: /* OK */
+          printf ("\tRES 0, A\t\t\t[A = %02x]\n", cpu->AF.r_8.h);
+          cpu->AF.r_8.h &= 0xFE;
+          cycles = 8;
           break;
         default:
           printf ("\tOPCODE [CB%02x] not implemented!\n", opcode);
@@ -414,26 +625,86 @@ cpu_gb_step (CpuGB *cpu) {
       map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.h);
       map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.l);
       cpu->PC.r_16 = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) | (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8);
+      cycles = 12;
+      break;
+    case 0xCE:
+      printf ("\tADC A, %02x\t\t\t[carry_flag = %s]\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->flags->carry_flag ? "TRUE" : "FALSE");
+      cpu->AF.r_8.h += map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) + cpu->flags->carry_flag;
+      /* FIXME : set flags */
+      cpu->PC.r_16 += 2;
+      cycles = 8;
+      break;
+    case 0xD0:
+      printf ("\tRET NC\n");
+      if (cpu->flags->carry_flag == FALSE) {
+        cpu->PC.r_8.l = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+        cpu->PC.r_8.h = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+      }
+      else
+        cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0xE0:
       printf ("\tLD (FF00 + %02x), A\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
       map_gb_set_memory (cpu->map, 0xFF00 | map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->AF.r_8.h);
       cpu->PC.r_16 += 2;
+      cycles = 12;
+      break;
+    case 0xE1: /* OK */
+      printf ("\tPOP HL\t\t\t[HL <- %02x%02x]\n", map_gb_get_memory (cpu->map, cpu->SP.r_16 + 1), map_gb_get_memory (cpu->map, cpu->SP.r_16 + 2));
+      cpu->HL.r_8.l = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+      cpu->HL.r_8.h = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+      cpu->PC.r_16 += 1;
+      cycles = 12;
       break;
     case 0xE2:
       printf ("\tLD (FF00 + C), A\n");
       map_gb_set_memory (cpu->map, 0xFF00 | cpu->BC.r_8.l, cpu->AF.r_8.h);
       cpu->PC.r_16 += 1;
+      cycles = 8;
+      break;
+    case 0xE5: /* OK */
+      printf ("\tPUSH HL\n");
+      map_gb_set_memory (cpu->map, cpu->SP.r_16--, cpu->HL.r_8.h);
+      map_gb_set_memory (cpu->map, cpu->SP.r_16--, cpu->HL.r_8.l);
+      cpu->PC.r_16 += 1;
+      cycles = 16;
+      break;
+    case 0xE6: /* OK */
+      printf ("\tAND %02x\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
+      cpu->AF.r_8.h &= map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = TRUE;
+      cpu->flags->carry_flag = FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h ? FALSE : TRUE;
+      cpu->PC.r_16 += 2;
+      cycles = 8;
       break;
     case 0xEA:
       printf ("\tLD (%04x), A\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) | (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8));
       map_gb_set_memory (cpu->map, map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) | (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8), cpu->AF.r_8.h);
       cpu->PC.r_16 += 3;
+      cycles = 16;
       break;
     case 0xF0:
       printf ("\tLD A, (FF00 + %02x)\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
       cpu->AF.r_8.h = map_gb_get_memory (cpu->map, 0xFF00 | map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
       cpu->PC.r_16 += 2;
+      cycles = 12;
+      break;
+    case 0xF3:
+      printf ("FIXME : DI !!!\n");
+      cpu->PC.r_16 += 1;
+      break;
+    case 0xFA:
+      printf ("\tLD A, (%02x%02x)\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
+      cpu->AF.r_8.h = map_gb_get_memory (cpu->map, (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) | (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8)));
+      cpu->PC.r_16 += 3;
+      cycles = 16;
+      break;
+    case 0xFB:
+      printf ("FIXME : EI !!!\n");
+      cpu->PC.r_16 += 1;
       break;
     case 0xFE:
       printf ("\tCP %02x\t\t[A = %02x]\n", map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->AF.r_8.h);
@@ -442,9 +713,11 @@ cpu_gb_step (CpuGB *cpu) {
       if (cpu->AF.r_8.h < map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1))
         cpu->flags->carry_flag = TRUE;
       cpu->PC.r_16 += 2;
+      cycles = 8;
       break;
     default:
       printf ("\tOPCODE [%02x] not implemented!\n", opcode);
       break;
   }
+  return cycles;
 }

@@ -11,6 +11,6 @@ BYTE    cpu_gb_get_hram_memory     (CpuGB *cpu, ADDR16 addr);
 void    cpu_gb_set_hram_memory     (CpuGB *cpu, ADDR16 addr, BYTE value);
 BYTE    cpu_gb_get_rom_memory      (CpuGB *cpu, ADDR16 addr);
 void    cpu_gb_set_mapper          (CpuGB *cpu, MapGB *map);
-void    cpu_gb_step                (CpuGB *cpu);
+UINT8   cpu_gb_step                (CpuGB *cpu);
 
 #endif

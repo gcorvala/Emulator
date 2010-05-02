@@ -22,6 +22,7 @@ main (int argc, char **argv) {
   char *tmp;
   INT32 i, j, k;
   BYTE array[16] = { 0x7C, 0x7C, 0x00, 0xC6, 0xC6, 0x00, 0x00, 0xFF, 0xC6, 0xC6, 0x00, 0xC6, 0xC6, 0x00, 0x00, 0x00};
+  UINT32 cycles = 0;
 
   printf ("argc : %d\n", argc);
   for (i = 0; i < argc; ++i) {
@@ -114,18 +115,22 @@ main (int argc, char **argv) {
 
     SDL_FillRect (surface, bg, white);
 
-    for (k = 0; k < 0xBB40; ++k) {
-      cpu_gb_step (cpu_gb);
+    for (k = 0; k < 0x2FFFF; ++k) {
+      cycles += cpu_gb_step (cpu_gb);
+      /*printf ("CYCLES %u\n", cycles);*/
  
-      if (k % 0x100 == 0) {
+      if (cycles % 4560 == 0) {
         SDL_FillRect (surface, bg, white);
-        for (i = 0; i < (INT32) background_gb_get_window_height (background_gb); ++i) {
-          for (j = 0; j < (INT32) background_gb_get_window_width (background_gb); ++j) {
-            if (background_gb_get_window_pixel (background_gb, j, i)) {
-              SDL_LockSurface (surface);
-              pixmem = ((Uint32*) (surface->pixels) + j + i * surface->w);
-              *pixmem = black;
-              SDL_UnlockSurface (surface);
+        for (i = 0; i < (INT32) background_gb_get_window_height (background_gb) + 10; ++i) {
+          /*map_gb_set_memory (map_gb, 0xFF44, i);*/
+          if (i < 144) {
+            for (j = 0; j < (INT32) background_gb_get_window_width (background_gb); ++j) {
+              if (background_gb_get_window_pixel (background_gb, j, i)) {
+                SDL_LockSurface (surface);
+                pixmem = ((Uint32*) (surface->pixels) + j + i * surface->w);
+                *pixmem = black;
+                SDL_UnlockSurface (surface);
+              }
             }
           }
         }
@@ -136,7 +141,7 @@ main (int argc, char **argv) {
     free (bg);
 
     SDL_UpdateRect (surface, 0, 0, 0, 0);
-    SDL_Delay (3000);
+    SDL_Delay (1000);
     
     SDL_FreeSurface (surface);
   }

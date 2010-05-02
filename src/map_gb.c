@@ -10,9 +10,8 @@ struct _MapGB {
   RomGB *rom;
   BYTE video_ram[0x2000];
   BOOL bootrom;
-  BYTE FF42;
-  BYTE FF43;
-  BYTE FF40;
+  BYTE io_reg[0x007F];
+  BYTE interrupts;
 };
 
 MapGB *
@@ -54,25 +53,23 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
     }
   }
   else if (addr >= 0x4000 && addr < 0x8000)
-    result = rom_gb_get_rom_memory (map->rom, 1, addr);
+    result = rom_gb_get_rom_memory (map->rom, 1, addr % 0x4000);
   else if (addr >= 0x8000 && addr < 0xA000)
     result = map->video_ram[addr - 0x8000];
   else if (addr >= 0xC000 && addr < 0xE000)
     result = cpu_gb_get_ram_memory (map->cpu, addr - 0xC000);
-  else if (addr == 0xFF42)
-    result = map->FF42;
-  else if (addr >= 0xFF00 && addr < 0xFF4C) {
-    if (addr == 0xFF40)
-      result = map->FF40;
-    else if (addr == 0xFF42)
-      result = map->FF42;
-    else if (addr == 0xFF43)
-      result = map->FF43;
-    else
+  else if (addr >= 0xFF00 && addr < 0xFF7F) {
+    if (addr == 0xFF44 && map->bootrom == TRUE)
       result = 0x90;
+    else if (addr == 0xFF44)
+      result = 0x91;
+    else
+      result = map->io_reg[addr & 0x00FF];
   }
   else if (addr >= 0xFF80 && addr < 0xFFFF)
     result = cpu_gb_get_hram_memory (map->cpu, addr - 0xFF80);
+  else if (addr == 0xFFFF)
+    result = map->interrupts;
   else {
     printf ("!!! READ MEMORY NOT YET IMPLEMENTED!!! ");
     printf ("%s : $%04x\n", FUNC, addr);
@@ -87,14 +84,17 @@ map_gb_set_memory (MapGB *map, ADDR16 addr, BYTE value) {
   printf ("%s : $%04x %02x\n", FUNC, addr, value);
   if (addr >= 0x8000 && addr <= 0xA000)
     map->video_ram[addr - 0x8000] = value;
+  else if (addr >= 0xC000 && addr < 0xE000)
+    cpu_gb_set_ram_memory (map->cpu, addr - 0xC000, value);
+  else if (addr >= 0xFF00 && addr < 0xFF7F) {
+    if (addr == 0xFF50 && value == 0x01)
+      map->bootrom = FALSE;
+    map->io_reg[addr & 0x00FF] = value;
+  }
   else if (addr >= 0xFF80 && addr < 0xFFFF)
     cpu_gb_set_hram_memory (map->cpu, addr - 0xFF80, value);
-  else if (addr == 0xFF40)
-    map->FF40 = value;
-  else if (addr == 0xFF42)
-    map->FF42 = value;
-  else if (addr == 0xFF43)
-    map->FF43 = value;
+  else if (addr == 0xFFFF)
+    map->interrupts = value;
   else {
     printf ("!!! WRITE MEMORY NOT YET IMPLEMENTED!!! ");
     printf ("%s : $%04x %02x\n", FUNC, addr, value);

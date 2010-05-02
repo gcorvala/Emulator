@@ -101,6 +101,9 @@ background_gb_get_pixel (BackgroundGB *background, UINT8 x, UINT8 y) {
   ADDR16 bg_map;
   int result;
 
+  if (background_gb_is_background_enable (background) == FALSE ||
+      background_gb_is_lcd_enable (background) == FALSE)
+    return 0;
   bg_map = map_gb_get_memory (background->map, 0xFF40) & 0x08 ? 0x9C00 : 0x9800;
   map_tile_x = x >> 3; /* div 8 */
   map_tile_y = y >> 3; /* div 8 */
