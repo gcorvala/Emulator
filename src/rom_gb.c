@@ -134,7 +134,7 @@ rom_gb_get_rom_size (RomGB *rom) {
 
   size = 32 << (rom->header->rom_size & 0x0f);
   if (rom->header->rom_size & 0xf0)
-    size += 32 << (rom->header->rom_size & 0xf0);
+    size += 32 << ((rom->header->rom_size & 0xf0) >> 4);
   size *= 1024;
 
   return size;
