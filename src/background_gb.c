@@ -63,7 +63,7 @@ background_gb_get_tile (BackgroundGB *background, UINT8 n) {
   int i;
 
   if (n >= 0xC0) {
-    printf ("%s !!! tile number is invalid (max 192) !!!\n", FUNC);
+    printf ("%s !!! tile number is invalid %u (max 192) !!!\n", FUNC, n);
     return NULL;
   }
 
