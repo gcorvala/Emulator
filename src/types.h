@@ -4,10 +4,11 @@
 typedef struct _CpuGB        CpuGB;
 typedef struct _BackgroundGB BackgroundGB;
 typedef struct _MapGB        MapGB;
-typedef struct _PixelGB      PixelGB;
 typedef struct _RomGB        RomGB;
 typedef struct _SpriteGB     SpriteGB;
 typedef struct _TileGB       TileGB;
+
+typedef struct _Color     Color;
 
 typedef struct _CpuNES CpuNES;
 typedef struct _MapNES MapNES;

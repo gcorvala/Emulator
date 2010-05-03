@@ -16,7 +16,7 @@ size_t         background_gb_get_height           (BackgroundGB *background);
 size_t         background_gb_get_width            (BackgroundGB *background);
 size_t         background_gb_get_window_height    (BackgroundGB *background);
 size_t         background_gb_get_window_width     (BackgroundGB *background);
-UINT8          background_gb_get_pixel            (BackgroundGB *background, UINT8 x, UINT8 y);
-UINT8          background_gb_get_window_pixel     (BackgroundGB *background, UINT8 x, UINT8 y);
+Color *        background_gb_get_pixel            (BackgroundGB *background, UINT8 x, UINT8 y);
+Color *        background_gb_get_window_pixel     (BackgroundGB *background, UINT8 x, UINT8 y);
 
 #endif

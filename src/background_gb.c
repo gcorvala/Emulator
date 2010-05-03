@@ -2,6 +2,7 @@
 
 #include "map_gb.h"
 #include "tile_gb.h"
+#include "color.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -92,18 +93,20 @@ background_gb_get_window_width (BackgroundGB *background) {
   return background->w_width;
 }
 
-UINT8
+Color *
 background_gb_get_pixel (BackgroundGB *background, UINT8 x, UINT8 y) {
-  int tile_id;
   TileGB *tile;
+  ADDR16 bg_map;
   UINT8 map_tile_x, map_tile_y;
   UINT8 tile_x, tile_y;
-  ADDR16 bg_map;
+  INT8 tile_id;
   int result;
+  Color *color;
 
   if (background_gb_is_background_enable (background) == FALSE ||
       background_gb_is_lcd_enable (background) == FALSE)
-    return 0;
+    return NULL;
+
   bg_map = map_gb_get_memory (background->map, 0xFF40) & 0x08 ? 0x9C00 : 0x9800;
   map_tile_x = x >> 3; /* div 8 */
   map_tile_y = y >> 3; /* div 8 */
@@ -114,10 +117,20 @@ background_gb_get_pixel (BackgroundGB *background, UINT8 x, UINT8 y) {
   result = tile_gb_get_pixel (tile, tile_x, tile_y);
   tile_gb_free (tile);
 
-  return result;
+  /* FIXME : color palette ? */
+  if (result == 0)
+    color = color_new (0xFF, 0xFF, 0xFF);
+  else if (result == 1)
+    color = color_new (0xA0, 0xA0, 0xA0);
+  else if (result == 2)
+    color = color_new (0x50, 0x50, 0x50);
+  else /* result == 3 */
+    color = color_new (0x00, 0x00, 0x00);
+
+  return color;
 }
 
-UINT8
+Color *
 background_gb_get_window_pixel (BackgroundGB *background, UINT8 x, UINT8 y) {
   UINT8 scroll_x, scroll_y;
 

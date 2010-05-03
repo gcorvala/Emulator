@@ -8,6 +8,7 @@
 #include "tile_gb.h"
 #include "background_gb.h"
 
+#include "color.h"
 #include "types.h"
 
 #include "SDL.h"
@@ -23,6 +24,7 @@ main (int argc, char **argv) {
   INT32 i, j, k;
   BYTE array[16] = { 0x7C, 0x7C, 0x00, 0xC6, 0xC6, 0x00, 0x00, 0xFF, 0xC6, 0xC6, 0x00, 0xC6, 0xC6, 0x00, 0x00, 0x00};
   UINT32 cycles = 0;
+  Color *color;
 
   printf ("argc : %d\n", argc);
   for (i = 0; i < argc; ++i) {
@@ -48,6 +50,18 @@ main (int argc, char **argv) {
   printf ("\tFALSE = %d\n", FALSE);
 
   printf ("Test types END\n");
+
+  printf ("Test Color START\n");
+
+  color = color_new (0x11, 0x22, 0x33);
+
+  printf ("\tColor->red = %02x\n", color_get_red (color));
+  printf ("\tColor->green = %02x\n", color_get_green (color));
+  printf ("\tColor->blue = %02x\n", color_get_blue (color));
+
+  color_free (color);
+
+  printf ("Test Color END\n");
 
   printf ("Emulator START\n");
 
@@ -97,7 +111,8 @@ main (int argc, char **argv) {
   {
     SDL_Surface *surface;
     SDL_Rect *bg;
-    Uint32 black, white;
+    Color *color;
+    Uint32 white;
     Uint32 *pixmem;
 
     if (SDL_Init (SDL_INIT_VIDEO) != 0) {
@@ -106,12 +121,11 @@ main (int argc, char **argv) {
 
     surface = SDL_SetVideoMode (background_gb_get_window_width (background_gb), background_gb_get_window_height (background_gb), 32, SDL_HWSURFACE);
 
-    black = SDL_MapRGB (surface->format, 0x00, 0x00, 0x00);
-    white = SDL_MapRGB (surface->format, 0xFF, 0xFF, 0xFF);
-
     bg = calloc (sizeof (SDL_Rect), 1);
     bg->w = background_gb_get_window_width (background_gb);
     bg->h = background_gb_get_window_height (background_gb);
+
+    white = SDL_MapRGB (surface->format, 0xFF, 0xFF, 0xFF);
 
     SDL_FillRect (surface, bg, white);
 
@@ -125,11 +139,12 @@ main (int argc, char **argv) {
           /*map_gb_set_memory (map_gb, 0xFF44, i);*/
           if (i < 144) {
             for (j = 0; j < (INT32) background_gb_get_window_width (background_gb); ++j) {
-              if (background_gb_get_window_pixel (background_gb, j, i)) {
-                SDL_LockSurface (surface);
+              color = background_gb_get_window_pixel (background_gb, j, i);
+              if (color != NULL) {
+                Uint32 sdl_color;
+                sdl_color = SDL_MapRGB (surface->format, color_get_red (color), color_get_green (color), color_get_blue (color));
                 pixmem = ((Uint32*) (surface->pixels) + j + i * surface->w);
-                *pixmem = black;
-                SDL_UnlockSurface (surface);
+                *pixmem = sdl_color;
               }
             }
           }
@@ -140,7 +155,6 @@ main (int argc, char **argv) {
 
     free (bg);
 
-    SDL_UpdateRect (surface, 0, 0, 0, 0);
     SDL_Delay (1000);
     
     SDL_FreeSurface (surface);

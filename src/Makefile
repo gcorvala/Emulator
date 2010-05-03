@@ -3,6 +3,7 @@ LIBS = sdl
 
 OBJECTS = \
 	background_gb.o \
+  color.o \
 	cpu_gb.o \
 	map_gb.o \
 	rom_gb.o \
@@ -10,17 +11,12 @@ OBJECTS = \
 
 HEADERS = \
 	background_gb.h.gch \
+	color.h.gch \
 	cpu_gb.h.gch \
 	map_gb.h.gch \
 	rom_gb.h.gch \
 	tile_gb.h.gch \
 	types.h.gch
-
-#cpu_nes.o
-#map_nes.o
-#rom_nes.o
-#pixel_gb.o
-#sprite_gb.o
 
 BIN = main
 
