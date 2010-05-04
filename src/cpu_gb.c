@@ -33,6 +33,8 @@ struct _CpuGB {
   CpuGBFlags *flags;
 
   MapGB *map;
+
+  BOOL IME;
 };
 
 CpuGB *
@@ -780,6 +782,13 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 2;
       cycles = 8;
       break;
+    case 0xD9:
+      assembly = "RETI";
+      cpu->PC.r_8.l = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+      cpu->PC.r_8.h = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+      cpu->IME = TRUE;
+      cycles = 8;
+      break;
     case 0xE0:
       assembly = "LD (FF00 + #), A";
       map_gb_set_memory (cpu->map, 0xFF00 | map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->AF.r_8.h);
@@ -827,6 +836,14 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 3;
       cycles = 16;
       break;
+    case 0xEF:
+      assembly = "RST $28";
+      tmp.r_16 = cpu->PC.r_16 + 1;
+      map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.h);
+      map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.l);
+      cpu->PC.r_16 = 0x0028;
+      cycles = 32;
+      break;
     case 0xF0:
       assembly = "LD A, (FF00 + #)";
       cpu->AF.r_8.h = map_gb_get_memory (cpu->map, 0xFF00 | map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1));
@@ -843,6 +860,7 @@ cpu_gb_step (CpuGB *cpu) {
     case 0xF3:
       /* FIXME */
       assembly = "DI";
+      cpu->IME = FALSE;
       cpu->PC.r_16 += 1;
       break;
     case 0xF5:
@@ -861,6 +879,7 @@ cpu_gb_step (CpuGB *cpu) {
     case 0xFB:
       /* FIXME */
       assembly = "EI";
+      cpu->IME = TRUE;
       cpu->PC.r_16 += 1;
       break;
     case 0xFE:
@@ -889,4 +908,67 @@ cpu_gb_step (CpuGB *cpu) {
   printf_asm (addr, opcode, assembly, "AF = %04x | BC = %04x | DE = %04x | HL = %04x | Z = %u | N = %u| H = %u | C = %u", cpu->AF.r_16, cpu->BC.r_16, cpu->DE.r_16, cpu->HL.r_16, cpu->flags->zero_flag, cpu->flags->negative_flag, cpu->flags->half_carry_flag, cpu->flags->carry_flag);
 
   return cycles;
+}
+
+void
+cpu_gb_interrupt (CpuGB *cpu) {
+  BYTE interrupt_enable, interrupt_request;
+  int i;
+
+  if (cpu->IME == FALSE)
+    return;
+
+  interrupt_enable = map_gb_get_memory (cpu->map, 0xFFFF);
+  interrupt_request = map_gb_get_memory (cpu->map, 0xFF0F);
+
+  for (i = 0; i < 5; ++i) {
+    if (((interrupt_enable >> i) & 0x01)) {
+      printf ("INTERRUPTION FOUND !!!!\n");
+      interrupt_request ^= (0x01 << i);
+      cpu->IME = FALSE;
+      map_gb_set_memory (cpu->map, cpu->SP.r_16--, cpu->PC.r_8.h);
+      map_gb_set_memory (cpu->map, cpu->SP.r_16--, cpu->PC.r_8.l);
+      cpu->PC.r_16 = 0x40 + (i * 8);
+      return;
+    }
+  }
+}
+
+void
+cpu_gb_update_clock (CpuGB *cpu, UINT32 cycles) {
+  UINT8 tac, tima, tma;
+  UINT32 tac_freq;
+
+  /* CPU_GB_FREQ / 16384 = 256 */
+  if ((cycles % 256) == 0) {
+    /* FIXME : cycles < 256 -> cycles > 256 ... */
+    /* FIXME : Writing any value to this register resets it to 00h. */
+    map_gb_set_memory (cpu->map, 0xFF04, map_gb_get_memory (cpu->map, 0xFF04) + 1);
+  }
+
+  tac = map_gb_get_memory (cpu->map, 0xFF07);
+
+  if ((tac & 0x04) == FALSE)
+    return;
+
+  if ((tac & 0x03) == 0)
+    tac_freq = 4096;
+  else if ((tac & 0x03) == 1)
+    tac_freq = 262144;
+  else if ((tac & 0x03) == 2)
+    tac_freq = 65536;
+  else /* if ((tac & 0x03) == 3) */
+    tac_freq = 16384;
+
+  if ((cycles % (CPU_GB_FREQ / tac_freq)) == 0) {
+    tima = map_gb_get_memory (cpu->map, 0xFF05);
+    tma = map_gb_get_memory (cpu->map, 0xFF06);
+    if (tima == 0xFF) {
+      map_gb_set_memory (cpu->map, 0xFF05, tma);
+      map_gb_set_memory (cpu->map, 0xFF0F, 0x04);
+    }
+    else {
+      map_gb_set_memory (cpu->map, 0xFF05, tima + 1);
+    }
+  }
 }

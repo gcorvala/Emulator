@@ -52,4 +52,6 @@ typedef int BOOL;
 #define FUNC  __FUNCTION__
 #define LINE  __LINE__
 
+#define CPU_GB_FREQ (0x400000)
+
 #endif

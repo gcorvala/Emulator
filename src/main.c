@@ -130,9 +130,11 @@ main (int argc, char **argv) {
 
     SDL_FillRect (surface, bg, white);
 
-    for (k = 0; k < 0x2FFFF; ++k) {
+    for (k = 0; k < 0xFFFFF; ++k) {
     /*for (k = 0; k < 0xBB40; ++k) {*/
       cycles += cpu_gb_step (cpu_gb);
+      cpu_gb_update_clock (cpu_gb, cycles);
+      cpu_gb_interrupt (cpu_gb);
 
       if (cycles % 4560 == 0) {
         SDL_FillRect (surface, bg, white);
