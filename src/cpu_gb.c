@@ -886,7 +886,7 @@ cpu_gb_step (CpuGB *cpu) {
       break;
   }
 
-  printf_asm (addr, opcode, assembly, "[AF = %04x | BC = %04x | DE = %04x | HL = %04x | Z = %u | N = %u| H = %u | C = %u]", cpu->AF.r_16, cpu->BC.r_16, cpu->DE.r_16, cpu->HL.r_16, cpu->flags->zero_flag, cpu->flags->negative_flag, cpu->flags->half_carry_flag, cpu->flags->carry_flag);
+  printf_asm (addr, opcode, assembly, "AF = %04x | BC = %04x | DE = %04x | HL = %04x | Z = %u | N = %u| H = %u | C = %u", cpu->AF.r_16, cpu->BC.r_16, cpu->DE.r_16, cpu->HL.r_16, cpu->flags->zero_flag, cpu->flags->negative_flag, cpu->flags->half_carry_flag, cpu->flags->carry_flag);
 
   return cycles;
 }
