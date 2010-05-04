@@ -7,7 +7,8 @@ OBJECTS = \
 	cpu_gb.o \
 	map_gb.o \
 	rom_gb.o \
-	tile_gb.o
+	tile_gb.o \
+	utils.o
 
 HEADERS = \
 	background_gb.h.gch \
@@ -16,7 +17,8 @@ HEADERS = \
 	map_gb.h.gch \
 	rom_gb.h.gch \
 	tile_gb.h.gch \
-	types.h.gch
+	types.h.gch \
+	utils.h.gch
 
 BIN = main
 

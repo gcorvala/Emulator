@@ -12,6 +12,8 @@ struct _MapGB {
   BOOL bootrom;
   BYTE io_reg[0x007F];
   BYTE interrupts;
+
+  BOOL HACK;
 };
 
 MapGB *
@@ -21,6 +23,8 @@ map_gb_new (void) {
   map = calloc (sizeof (MapGB), 1);
 
   map->bootrom = TRUE;
+
+  map->HACK = FALSE;
 
   return map;
 }
@@ -59,7 +63,17 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
   else if (addr >= 0xC000 && addr < 0xE000)
     result = cpu_gb_get_ram_memory (map->cpu, addr - 0xC000);
   else if (addr >= 0xFF00 && addr < 0xFF7F) {
-    if (addr == 0xFF44 && map->bootrom == TRUE)
+    if (addr == 0xFF41) {
+      if (map->HACK == FALSE) {
+        result = 0x03;
+        map->HACK = TRUE;
+      }
+      else {
+        result = 0x00;
+        map->HACK = FALSE;
+      }
+    }
+    else if (addr == 0xFF44 && map->bootrom == TRUE)
       result = 0x90;
     else if (addr == 0xFF44)
       result = 0x91;

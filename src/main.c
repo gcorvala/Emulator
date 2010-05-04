@@ -10,6 +10,7 @@
 
 #include "color.h"
 #include "types.h"
+#include "utils.h"
 
 #include "SDL.h"
 
@@ -129,23 +130,20 @@ main (int argc, char **argv) {
 
     SDL_FillRect (surface, bg, white);
 
-    for (k = 0; k < 0x2FFFF; ++k) {
+    /*for (k = 0; k < 0x2FFFF; ++k) {*/
+    for (k = 0; k < 0xBB40; ++k) {
       cycles += cpu_gb_step (cpu_gb);
-      /*printf ("CYCLES %u\n", cycles);*/
- 
+
       if (cycles % 4560 == 0) {
         SDL_FillRect (surface, bg, white);
-        for (i = 0; i < (INT32) background_gb_get_window_height (background_gb) + 10; ++i) {
-          /*map_gb_set_memory (map_gb, 0xFF44, i);*/
-          if (i < 144) {
-            for (j = 0; j < (INT32) background_gb_get_window_width (background_gb); ++j) {
-              color = background_gb_get_window_pixel (background_gb, j, i);
-              if (color != NULL) {
-                Uint32 sdl_color;
-                sdl_color = SDL_MapRGB (surface->format, color_get_red (color), color_get_green (color), color_get_blue (color));
-                pixmem = ((Uint32*) (surface->pixels) + j + i * surface->w);
-                *pixmem = sdl_color;
-              }
+        for (i = 0; i < (INT32) background_gb_get_window_height (background_gb); ++i) {
+          for (j = 0; j < (INT32) background_gb_get_window_width (background_gb); ++j) {
+            color = background_gb_get_window_pixel (background_gb, j, i);
+            if (color != NULL) {
+              Uint32 sdl_color;
+              sdl_color = SDL_MapRGB (surface->format, color_get_red (color), color_get_green (color), color_get_blue (color));
+              pixmem = ((Uint32*) (surface->pixels) + j + i * surface->w);
+              *pixmem = sdl_color;
             }
           }
         }
