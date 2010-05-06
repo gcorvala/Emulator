@@ -4,6 +4,7 @@ LIBS = sdl
 OBJECTS = \
 	background_gb.o \
   color.o \
+  cpu.o \
 	cpu_gb.o \
 	map_gb.o \
 	rom_gb.o \
@@ -13,6 +14,7 @@ OBJECTS = \
 HEADERS = \
 	background_gb.h.gch \
 	color.h.gch \
+	cpu.h.gch \
 	cpu_gb.h.gch \
 	map_gb.h.gch \
 	rom_gb.h.gch \

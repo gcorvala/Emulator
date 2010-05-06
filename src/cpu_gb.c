@@ -1,5 +1,6 @@
 #include "cpu_gb.h"
 
+#include "cpu.h"
 #include "map_gb.h"
 #include "utils.h"
 
@@ -17,6 +18,8 @@ typedef struct {
 } CpuGBFlags;
 
 struct _CpuGB {
+  Cpu cpu;
+
   REG16 AF; /* r_8.h = A */
   REG16 BC; /* r_8.h = B | r_8.l = C */
   REG16 DE; /* r_8.h = D | r_8.l = E */
@@ -28,14 +31,15 @@ struct _CpuGB {
   BYTE ram[0x2000]; /* 8KB */
   BYTE hram[0X0080]; /* 128B */
 
-  UINT32 ticks;
-
   CpuGBFlags *flags;
 
   MapGB *map;
 
   BOOL IME;
 };
+
+void cpu_gb_free (Cpu *cpu);
+UINT8 cpu_gb_step (Cpu *cpu);
 
 CpuGB *
 cpu_gb_new  (void) {
@@ -59,11 +63,14 @@ cpu_gb_new  (void) {
     return NULL;
   }
 
+  cpu->cpu.step = cpu_gb_step;
+  cpu->cpu.free = cpu_gb_free;
+
   return cpu;
 }
 
 void
-cpu_gb_free (CpuGB *cpu) {
+cpu_gb_free (Cpu *cpu) {
   free (cpu);
 }
 
@@ -119,7 +126,8 @@ cpu_gb_set_mapper (CpuGB *cpu, MapGB *map) {
 }
 
 UINT8
-cpu_gb_step (CpuGB *cpu) {
+cpu_gb_step (Cpu *cpu_parent) {
+  CpuGB *cpu = (CpuGB *) cpu_parent;
   UINT16 opcode;
   BOOL tmp;
   UINT8 cycles = 0;
@@ -141,6 +149,12 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->BC.r_8.h = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2);
       cpu->PC.r_16 += 3;
       cycles = 12;
+      break;
+    case 0x03: /* OK */
+      assembly = "INC BC";
+      cpu->BC.r_16++;
+      cpu->PC.r_16 += 1;
+      cycles = 8;
       break;
     case 0x04: /* OK */
       assembly = "INC B";
@@ -172,6 +186,12 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->flags->negative_flag = FALSE;
       cpu->flags->half_carry_flag = (cpu->HL.r_8.h & 0x0F) + (cpu->BC.r_8.h & 0x0F) > 0x0F ? TRUE : FALSE;
       cpu->flags->carry_flag = cpu->HL.r_16 + cpu->BC.r_16 > 0xFFFF ? TRUE : FALSE;
+      cpu->PC.r_16 += 1;
+      cycles = 8;
+      break;
+    case 0x0A: /* OK */
+      assembly = "LD A, (BC)";
+      cpu->AF.r_8.h = map_gb_get_memory (cpu->map, cpu->BC.r_16);
       cpu->PC.r_16 += 1;
       cycles = 8;
       break;
@@ -271,6 +291,21 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 1;
       cycles = 8;
       break;
+    case 0x1B:
+      assembly = "DEC DE";
+      cpu->DE.r_16--;
+      cpu->PC.r_16 += 1;
+      cycles = 8;
+      break;
+    case 0x1C: /* OK */
+      assembly = "INC E";
+      cpu->DE.r_8.l++;
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = (cpu->DE.r_8.l & 0x1F) == 0x10 ? TRUE : FALSE;
+      cpu->flags->zero_flag = cpu->DE.r_8.l == 0x00 ? TRUE : FALSE; 
+      cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
     case 0x1D: /* OK */
       assembly = "DEC E";
       cpu->DE.r_8.l--;
@@ -319,9 +354,24 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 1;
       cycles = 4;
       break;
+    case 0x26:
+      assembly = "LD H, #";
+      cpu->HL.r_8.h = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
+      cpu->PC.r_16 += 2;
+      cycles = 8;
+      break;
     case 0x28: /* OK */
       assembly = "JR Z, #";
       cpu->PC.r_16 += cpu->flags->zero_flag ? (INT8) map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) + 2 : 2;
+      cycles = 8;
+      break;
+    case 0x29:
+      assembly = "ADD HL, HL";
+      cpu->HL.r_16 += cpu->HL.r_16;
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = (cpu->HL.r_8.h & 0x0F) + (cpu->HL.r_8.h & 0x0F) > 0x0F ? TRUE : FALSE;
+      cpu->flags->carry_flag = cpu->HL.r_16 + cpu->HL.r_16 > 0xFFFF ? TRUE : FALSE;
+      cpu->PC.r_16 += 1;
       cycles = 8;
       break;
     case 0x2A: /* OK */
@@ -335,6 +385,14 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->HL.r_8.l = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       cpu->PC.r_16 += 2;
       cycles = 8;
+      break;
+    case 0x2F:
+      assembly = "CPL";
+      cpu->AF.r_8.h = ~cpu->AF.r_8.h;
+      cpu->flags->negative_flag = TRUE;
+      cpu->flags->half_carry_flag = TRUE;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
       break;
     case 0x30: /* OK */
       assembly = "JR NC, #";
@@ -368,6 +426,15 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 1;
       cycles = 8;
       break;
+    case 0x3C: /* OK */
+      assembly = "INC A";
+      cpu->AF.r_8.h++;
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = (cpu->AF.r_8.h & 0x1F) == 0x10 ? TRUE : FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h == 0x00 ? TRUE : FALSE; 
+      cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
     case 0x3D:
       assembly = "DEC A";
       cpu->AF.r_8.h--;
@@ -383,9 +450,21 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 2;
       cycles = 8;
       break;
+    case 0x44: /* OK */
+      assembly = "LD B, H";
+      cpu->BC.r_8.h = cpu->HL.r_8.h;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
     case 0x47: /* OK */
       assembly = "LD B, A";
       cpu->BC.r_8.h = cpu->AF.r_8.h;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
+    case 0x4D: /* OK */
+      assembly = "LD C, L";
+      cpu->BC.r_8.l = cpu->HL.r_8.l;
       cpu->PC.r_16 += 1;
       cycles = 4;
       break;
@@ -491,6 +570,16 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 1;
       cycles = 8;
       break;
+    case 0x81:
+      assembly = "ADD A, C";
+      cpu->AF.r_8.h += cpu->BC.r_8.l;
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = (cpu->AF.r_8.h & 0x0F) + (cpu->BC.r_8.l & 0x0F) > 0x0F ? TRUE : FALSE;
+      cpu->flags->carry_flag = cpu->AF.r_8.h + cpu->BC.r_8.l > 0xFF ? TRUE : FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h == 0 ? TRUE : FALSE;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
     case 0x85:
       assembly = "ADD A, L";
       cpu->AF.r_8.h += cpu->HL.r_8.l;
@@ -511,6 +600,16 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 1;
       cycles = 8;
       break;
+    case 0x87:
+      assembly = "ADD A, A";
+      cpu->AF.r_8.h += cpu->AF.r_8.h;
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = (cpu->AF.r_8.h & 0x0F) + (cpu->AF.r_8.h & 0x0F) > 0x0F ? TRUE : FALSE;
+      cpu->flags->carry_flag = cpu->AF.r_8.h + cpu->AF.r_8.h > 0xFF ? TRUE : FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h == 0 ? TRUE : FALSE;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
     case 0x90:
       /* FIXME */
       assembly = "SUB B";
@@ -523,12 +622,28 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 1;
       cycles = 8;
       break;
+    case 0xA1: /* OK */
+      assembly = "AND C";
+      cpu->AF.r_8.h &= cpu->BC.r_8.l;
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = TRUE;
+      cpu->flags->carry_flag = FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h ? FALSE : TRUE;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
     case 0xA7: /* OK */
       assembly = "AND A";
       cpu->flags->negative_flag = FALSE;
       cpu->flags->half_carry_flag = TRUE;
       cpu->flags->carry_flag = FALSE;
       cpu->flags->zero_flag = cpu->AF.r_8.h ? FALSE : TRUE;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
+    case 0xA9:
+      assembly = "XOR C";
+      cpu->AF.r_8.h ^= cpu->BC.r_8.l;
       cpu->PC.r_16 += 1;
       cycles = 4;
       break;
@@ -558,6 +673,25 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 1;
       cycles = 4;
       break;
+    case 0xB7: /* OK */
+      assembly = "OR A";
+      cpu->AF.r_8.h = cpu->AF.r_8.h | cpu->AF.r_8.h;
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = FALSE;
+      cpu->flags->carry_flag = FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h ? FALSE : TRUE;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
+    case 0xB9:
+      assembly = "CP C";
+      cpu->flags->negative_flag = TRUE;
+      cpu->flags->half_carry_flag = ((cpu->AF.r_8.h - cpu->BC.r_8.l) & 0x0F) == 0x0F ? TRUE : FALSE;
+      cpu->flags->carry_flag = cpu->AF.r_8.h < cpu->BC.r_8.l ? TRUE : FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h == cpu->BC.r_8.l ? TRUE : FALSE;
+      cpu->PC.r_16 += 1;
+      cycles = 4;
+      break;
     case 0xBA:
       assembly = "CP D";
       cpu->flags->negative_flag = TRUE;
@@ -565,7 +699,7 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->flags->carry_flag = cpu->AF.r_8.h < cpu->DE.r_8.h ? TRUE : FALSE;
       cpu->flags->zero_flag = cpu->AF.r_8.h == cpu->DE.r_8.h ? TRUE : FALSE;
       cpu->PC.r_16 += 1;
-      cycles = 8;
+      cycles = 4;
       break;
     case 0xBE:
       assembly = "CP (HL)";
@@ -596,6 +730,20 @@ cpu_gb_step (CpuGB *cpu) {
     case 0xC3: /* OK */
       assembly = "JP ##";
       cpu->PC.r_16 = (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8) | map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
+      cycles = 12;
+      break;
+    case 0xC4:
+      assembly = "CALL NZ, nn";
+      if (cpu->flags->zero_flag == FALSE) {
+        REG16 tmp;
+        tmp.r_16 = cpu->PC.r_16 + 3;
+        map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.h);
+        map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.l);
+        cpu->PC.r_16 = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) | (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8);
+      }
+      else {
+        cpu->PC.r_16 += 3;
+      }
       cycles = 12;
       break;
     case 0xC5:
@@ -730,6 +878,20 @@ cpu_gb_step (CpuGB *cpu) {
       }
       cpu->PC.r_16 += 2;
       break;
+    case 0xCC:
+      assembly = "CALL Z, nn";
+      if (cpu->flags->zero_flag == TRUE) {
+        REG16 tmp;
+        tmp.r_16 = cpu->PC.r_16 + 3;
+        map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.h);
+        map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.l);
+        cpu->PC.r_16 = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) | (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8);
+      }
+      else {
+        cpu->PC.r_16 += 3;
+      }
+      cycles = 12;
+      break;
     case 0xCD:
       assembly = "CALL ##";
       REG16 tmp;
@@ -780,6 +942,16 @@ cpu_gb_step (CpuGB *cpu) {
         cpu->flags->zero_flag = TRUE;
       cpu->flags->negative_flag = TRUE;
       cpu->PC.r_16 += 2;
+      cycles = 8;
+      break;
+    case 0xD8:
+      assembly = "RET C";
+      if (cpu->flags->carry_flag == TRUE) {
+        cpu->PC.r_8.l = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+        cpu->PC.r_8.h = map_gb_get_memory (cpu->map, ++cpu->SP.r_16);
+      }
+      else
+        cpu->PC.r_16 += 1;
       cycles = 8;
       break;
     case 0xD9:
@@ -870,8 +1042,19 @@ cpu_gb_step (CpuGB *cpu) {
       cpu->PC.r_16 += 1;
       cycles = 16;
       break;
+    case 0xF6: /* OK */
+      assembly = "OR #";
+      cpu->AF.r_8.h = cpu->AF.r_8.h | map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
+      cpu->flags->negative_flag = FALSE;
+      cpu->flags->half_carry_flag = FALSE;
+      cpu->flags->carry_flag = FALSE;
+      cpu->flags->zero_flag = cpu->AF.r_8.h ? FALSE : TRUE;
+      cpu->PC.r_16 += 2;
+      cycles = 8;
+      break;
     case 0xFA:
       assembly = "LD A, (##)";
+      printf ("%04x -> () = %02x", (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) | (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8)), map_gb_get_memory (cpu->map, (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) | (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8))));
       cpu->AF.r_8.h = map_gb_get_memory (cpu->map, (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) | (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8)));
       cpu->PC.r_16 += 3;
       cycles = 16;
@@ -922,9 +1105,9 @@ cpu_gb_interrupt (CpuGB *cpu) {
   interrupt_request = map_gb_get_memory (cpu->map, 0xFF0F);
 
   for (i = 0; i < 5; ++i) {
-    if (((interrupt_enable >> i) & 0x01)) {
-      printf ("INTERRUPTION FOUND !!!!\n");
-      interrupt_request ^= (0x01 << i);
+    if (interrupt_enable & interrupt_request & (0x01 << i)) {
+      printf ("INTERRUPTION FOUND %d!!!!\n", i);
+      map_gb_set_memory (cpu->map, 0xFF0F, interrupt_request ^ (0x01 << i));
       cpu->IME = FALSE;
       map_gb_set_memory (cpu->map, cpu->SP.r_16--, cpu->PC.r_8.h);
       map_gb_set_memory (cpu->map, cpu->SP.r_16--, cpu->PC.r_8.l);

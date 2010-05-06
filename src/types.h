@@ -1,6 +1,7 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
+typedef struct _Cpu          Cpu;
 typedef struct _CpuGB        CpuGB;
 typedef struct _BackgroundGB BackgroundGB;
 typedef struct _MapGB        MapGB;

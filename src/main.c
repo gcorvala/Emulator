@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
+#include "cpu.h"
 #include "cpu_gb.h"
 #include "rom_gb.h"
 #include "map_gb.h"
@@ -17,7 +18,7 @@
 int
 main (int argc, char **argv) {
   RomGB *rom_gb;
-  CpuGB *cpu_gb;
+  Cpu *cpu_gb;
   MapGB *map_gb;
   TileGB *tile_gb;
   BackgroundGB *background_gb;
@@ -102,12 +103,12 @@ main (int argc, char **argv) {
 
   printf ("Load CpuGB START\n");
 
-  cpu_gb = cpu_gb_new ();
+  cpu_gb = (Cpu *) cpu_gb_new ();
   map_gb = map_gb_new ();
   background_gb = background_gb_new (map_gb);
-  map_gb_set_cpu (map_gb, cpu_gb);
+  map_gb_set_cpu (map_gb, (CpuGB *) cpu_gb);
   map_gb_set_rom (map_gb, rom_gb);
-  cpu_gb_set_mapper (cpu_gb, map_gb);
+  cpu_gb_set_mapper ((CpuGB *) cpu_gb, map_gb);
 
   {
     SDL_Surface *surface;
@@ -130,11 +131,11 @@ main (int argc, char **argv) {
 
     SDL_FillRect (surface, bg, white);
 
-    for (k = 0; k < 0xFFFFF; ++k) {
+    for (k = 0; k < 0x2FFFF; ++k) {
     /*for (k = 0; k < 0xBB40; ++k) {*/
-      cycles += cpu_gb_step (cpu_gb);
-      cpu_gb_update_clock (cpu_gb, cycles);
-      cpu_gb_interrupt (cpu_gb);
+      cycles += cpu_step ((Cpu *) cpu_gb);
+      cpu_gb_update_clock ((CpuGB *) cpu_gb, cycles);
+      cpu_gb_interrupt ((CpuGB *) cpu_gb);
 
       if (cycles % 4560 == 0) {
         SDL_FillRect (surface, bg, white);
@@ -152,7 +153,6 @@ main (int argc, char **argv) {
         SDL_UpdateRect (surface, 0, 0, 0, 0);
       }
     }
-
     free (bg);
 
     SDL_Delay (1000);
@@ -169,7 +169,7 @@ main (int argc, char **argv) {
   printf ("\tmap_gb_get_memory (0x0134) = %c\n", map_gb_get_memory (map_gb, 0x134));
   map_gb_free (map_gb);
   rom_gb_free (rom_gb);
-  cpu_gb_free (cpu_gb);
+  cpu_free (cpu_gb);
 
   printf ("Load MapGB END\n");
 
