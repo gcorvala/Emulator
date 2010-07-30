@@ -132,12 +132,12 @@ main (int argc, char **argv) {
     SDL_FillRect (surface, bg, white);
 
     for (k = 0; k < 0x2FFFF; ++k) {
-    /*for (k = 0; k < 0xBB40; ++k) {*/
-      cycles += cpu_step ((Cpu *) cpu_gb);
+    //for (k = 0; k < 0xBB40; ++k) {
+      cycles = cpu_step ((Cpu *) cpu_gb);
       cpu_gb_update_clock ((CpuGB *) cpu_gb, cycles);
       cpu_gb_interrupt ((CpuGB *) cpu_gb);
 
-      if (cycles % 4560 == 0) {
+      if (cycles % 45600 == 0) {
         SDL_FillRect (surface, bg, white);
         for (i = 0; i < (INT32) background_gb_get_window_height (background_gb); ++i) {
           for (j = 0; j < (INT32) background_gb_get_window_width (background_gb); ++j) {

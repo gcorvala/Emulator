@@ -15,8 +15,6 @@ typedef struct _CpuNES CpuNES;
 typedef struct _MapNES MapNES;
 typedef struct _RomNES RomNES;
 
-typedef unsigned char BYTE;
-
 typedef signed char INT8;
 typedef unsigned char UINT8;
 
@@ -25,6 +23,10 @@ typedef unsigned short int UINT16;
 
 typedef signed int INT32;
 typedef unsigned int UINT32;
+
+typedef UINT8 BYTE;
+typedef UINT16 WORD;
+typedef UINT32 DWORD;
 
 typedef UINT8 ADDR8;
 typedef UINT16 ADDR16;
@@ -45,6 +47,8 @@ typedef union {
     REG16 h;
   } r_16;
 } REG32;
+
+typedef UINT8 FLAG;
 
 typedef int BOOL;
 

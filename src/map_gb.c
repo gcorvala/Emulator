@@ -62,6 +62,8 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
     result = map->video_ram[addr - 0x8000];
   else if (addr >= 0xC000 && addr < 0xE000)
     result = cpu_gb_get_ram_memory (map->cpu, addr - 0xC000);
+  else if (addr >= 0xE000 && addr < 0xFE00)
+    result = cpu_gb_get_ram_memory (map->cpu, addr - 0xE000);
   else if (addr >= 0xFF00 && addr < 0xFF7F) {
     if (addr == 0xFF41) {
       if (map->HACK == FALSE) {
@@ -95,11 +97,13 @@ map_gb_get_memory (MapGB *map, ADDR16 addr) {
 
 void
 map_gb_set_memory (MapGB *map, ADDR16 addr, BYTE value) {
-  printf ("%s : $%04x %02x\n", FUNC, addr, value);
+  //printf ("%s : $%04x %02x\n", FUNC, addr, value);
   if (addr >= 0x8000 && addr <= 0xA000)
     map->video_ram[addr - 0x8000] = value;
   else if (addr >= 0xC000 && addr < 0xE000)
     cpu_gb_set_ram_memory (map->cpu, addr - 0xC000, value);
+  else if (addr >= 0xE000 && addr < 0xFE00)
+    cpu_gb_set_ram_memory (map->cpu, addr - 0xE000, value);
   else if (addr >= 0xFF00 && addr < 0xFF7F) {
     if (addr == 0xFF50 && value == 0x01)
       map->bootrom = FALSE;

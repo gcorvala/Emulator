@@ -6,6 +6,7 @@ OBJECTS = \
   color.o \
   cpu.o \
 	cpu_gb.o \
+	cpu_op_16b.o \
 	map_gb.o \
 	rom_gb.o \
 	tile_gb.o \
@@ -16,13 +17,17 @@ HEADERS = \
 	color.h.gch \
 	cpu.h.gch \
 	cpu_gb.h.gch \
+	cpu_op_16b.h.gch \
 	map_gb.h.gch \
 	rom_gb.h.gch \
 	tile_gb.h.gch \
 	types.h.gch \
 	utils.h.gch
 
-BIN = main
+TESTS = \
+	test_cpu_ops.o
+
+BIN = main test
 
 %.o: %.c %.h
 	$(CC) $< -c -o $@
@@ -33,8 +38,11 @@ BIN = main
 main: main.c $(HEADERS) $(OBJECTS)
 	$(CC) $< $(OBJECTS) -o $@ `pkg-config --cflags --libs $(LIBS)`
 
+test: $(TESTS) $(HEADERS) $(OBJECTS)
+	$(CC) $< $(OBJECTS) -o $@
+
 clean:
-	rm -f $(HEADERS) $(OBJECTS) $(BIN)
+	rm -f $(HEADERS) $(OBJECTS) $(BIN) $(TESTS)
 
 memcheck: main
 	valgrind --leak-check=full ./main
