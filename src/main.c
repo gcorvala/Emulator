@@ -138,7 +138,7 @@ main (int argc, char **argv) {
       cpu_gb_interrupt ((CpuGB *) cpu_gb);
 
       if (cycles % 45600 == 0) {
-        SDL_FillRect (surface, bg, white);
+        //SDL_FillRect (surface, bg, white);
         for (i = 0; i < (INT32) background_gb_get_window_height (background_gb); ++i) {
           for (j = 0; j < (INT32) background_gb_get_window_width (background_gb); ++j) {
             color = background_gb_get_window_pixel (background_gb, j, i);

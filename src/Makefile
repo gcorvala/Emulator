@@ -1,4 +1,4 @@
-CC = gcc -pedantic -O4 -std=gnu99 -Wall -Wextra -Werror
+CC = gcc -pedantic -O4 -std=gnu99 -Wall -Wextra #-Werror
 LIBS = sdl
 
 OBJECTS = \
@@ -6,7 +6,7 @@ OBJECTS = \
   color.o \
   cpu.o \
 	cpu_gb.o \
-	cpu_op_16b.o \
+	cpu_ops.o \
 	map_gb.o \
 	rom_gb.o \
 	tile_gb.o \
@@ -17,7 +17,7 @@ HEADERS = \
 	color.h.gch \
 	cpu.h.gch \
 	cpu_gb.h.gch \
-	cpu_op_16b.h.gch \
+	cpu_ops.h.gch \
 	map_gb.h.gch \
 	rom_gb.h.gch \
 	tile_gb.h.gch \
@@ -25,7 +25,7 @@ HEADERS = \
 	utils.h.gch
 
 TESTS = \
-	test_cpu_ops.o
+	test.o
 
 BIN = main test
 
