@@ -599,6 +599,12 @@ cpu_gb_step (Cpu *cpu_parent) {
       cpu_ops_8b_ld (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, 0xFF00 + map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1)));
       cpu_gb_update (cpu, 12, 2);
       break;
+    /* ========== LD MISC ========== */
+    case 0x08:
+      assembly = "LD (##), SP";
+      map_gb_set_memory (cpu->map, (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8) | map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->SP.r_8.l);
+      cpu_gb_update (cpu, 20, 3);
+      break;
     /* ========== PUSH ========== */
     case 0xC5:
       assembly = "PUSH BC";
@@ -813,6 +819,51 @@ cpu_gb_step (Cpu *cpu_parent) {
       cpu_gb_update (cpu, 4, 1);
       break;
     /* ========== SBC ========== */
+    /*case 0xxx:
+      assembly = "SBC #";
+      cpu_ops_8b_sub (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_gb_update (cpu, 8, 2);
+      break;*/
+    case 0x98:
+      assembly = "SBC B";
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->BC.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_gb_update (cpu, 4, 1);
+      break;
+    case 0x99:
+      assembly = "SBC C";
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->BC.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_gb_update (cpu, 4, 1);
+      break;
+    case 0x9A:
+      assembly = "SBC D";
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->DE.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_gb_update (cpu, 4, 1);
+      break;
+    case 0x9B:
+      assembly = "SBC E";
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->DE.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_gb_update (cpu, 4, 1);
+      break;
+    case 0x9C:
+      assembly = "SBC H";
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->HL.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_gb_update (cpu, 4, 1);
+      break;
+    case 0x9D:
+      assembly = "SBC L";
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->HL.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_gb_update (cpu, 4, 1);
+      break;
+    case 0x9E:
+      assembly = "SBC (HL)";
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_gb_update (cpu, 8, 1);
+      break;
+    case 0x9F:
+      assembly = "SBC A";
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->AF.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_gb_update (cpu, 4, 1);
+      break;
     /* ========== AND ========== */
     case 0xA0:
       assembly = "AND B";
@@ -1408,6 +1459,15 @@ cpu_gb_step (Cpu *cpu_parent) {
       cpu_gb_update (cpu, 8, 0);
       break;
     /* ========== MISC ========== */
+    /* ========== RST ========== */
+    case 0xEF:
+      assembly = "RST $28";
+      tmp.r_16 = cpu->PC.r_16 + 1;
+      map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.h);
+      map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.l);
+      cpu->PC.r_16 = 0x0028;
+      cpu_gb_update (cpu, 32, 0);
+      break;
     /* ========== EI ========== */
     case 0xFB:
       assembly = "EI";
@@ -1434,14 +1494,19 @@ cpu_gb_step (Cpu *cpu_parent) {
       cpu_ops_8b_cpl (&(cpu->AF.r_8.h), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag));
       cpu_gb_update (cpu, 4, 1);
       break;
+    /* ========== HALT ========== */
+    case 0x76:
+      assembly = "HALT";
+      cpu_gb_update (cpu, 4, 1);
+      break;
 
     default:
       assembly = "!!! NOT IMPLEMENTED !!!";
-      cpu->cycles = 4;
+      cpu_gb_update (cpu, 4, 0);
       break;
   }
 
-  //printf_asm (addr, opcode, assembly, "AF = %04x | BC = %04x | DE = %04x | HL = %04x | SP = %04x | Z = %u | N = %u| H = %u | C = %u", cpu->AF.r_16, cpu->BC.r_16, cpu->DE.r_16, cpu->HL.r_16, cpu->SP.r_16, cpu->flags->zero_flag, cpu->flags->negative_flag, cpu->flags->half_carry_flag, cpu->flags->carry_flag);
+  printf_asm (addr, opcode, assembly, "AF = %04x | BC = %04x | DE = %04x | HL = %04x | SP = %04x | Z = %u | N = %u| H = %u | C = %u", cpu->AF.r_16, cpu->BC.r_16, cpu->DE.r_16, cpu->HL.r_16, cpu->SP.r_16, cpu->flags->zero_flag, cpu->flags->negative_flag, cpu->flags->half_carry_flag, cpu->flags->carry_flag);
 
   return cpu->cycles;
 }
@@ -1460,6 +1525,8 @@ cpu_gb_interrupt (CpuGB *cpu) {
   for (i = 0; i < 5; ++i) {
     if (interrupt_enable & interrupt_request & (0x01 << i)) {
       printf ("INTERRUPTION FOUND %d!!!!\n", i);
+      if (i == 4)
+        cpu->PC.r_16 += 4;
       map_gb_set_memory (cpu->map, 0xFF0F, interrupt_request ^ (0x01 << i));
       cpu->IME = FALSE;
       map_gb_set_memory (cpu->map, cpu->SP.r_16--, cpu->PC.r_8.h);

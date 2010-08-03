@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "cpu_ops.h"
 
 void
@@ -26,6 +27,11 @@ cpu_ops_8b_sub (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *
   *half_carry = ((*dest & 0x0F) < (value & 0x0F)) ? TRUE : FALSE;
   *carry = (*dest < value) ? TRUE : FALSE;
   *dest -= value;
+}
+
+void
+cpu_ops_8b_sbc (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry) {
+  cpu_ops_8b_sub (dest, value + *carry, zero, negative, half_carry, carry);
 }
 
 void
@@ -172,5 +178,7 @@ cpu_ops_16b_jp (REG16 *pc, ADDR16 target) {
 
 void
 cpu_ops_16b_jr (REG16 *pc, INT8 value) {
-  pc->r_16 += value;
+  printf ("old : %04x | value : %d | new : %04x\n", pc->r_16, value, pc->r_16 + value);
+  if (pc->r_16 != 0x0342)
+    pc->r_16 += value;
 }

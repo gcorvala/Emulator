@@ -1,4 +1,4 @@
-CC = gcc -pedantic -O4 -std=gnu99 -Wall -Wextra #-Werror
+CC = gcc -pedantic -O4 -std=gnu99 -Wall -Wextra -Werror
 LIBS = sdl
 
 OBJECTS = \

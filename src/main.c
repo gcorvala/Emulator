@@ -26,44 +26,11 @@ main (int argc, char **argv) {
   INT32 i, j, k;
   BYTE array[16] = { 0x7C, 0x7C, 0x00, 0xC6, 0xC6, 0x00, 0x00, 0xFF, 0xC6, 0xC6, 0x00, 0xC6, 0xC6, 0x00, 0x00, 0x00};
   UINT32 cycles = 0;
-  Color *color;
 
   printf ("argc : %d\n", argc);
   for (i = 0; i < argc; ++i) {
     printf ("argv[%d] : %s\n", i, argv[i]);
   }
-
-  printf ("Test types START\n");
-
-  printf ("\tsizeof (INT8) = %lu bits\n", (unsigned long) sizeof (INT8) * 8);
-  printf ("\tsizeof (INT16) = %lu bits\n", (unsigned long) sizeof (INT16) * 8);
-  printf ("\tsizeof (INT32) = %lu bits\n", (unsigned long) sizeof (INT32) * 8);
-  printf ("\tsizeof (UINT8) = %lu bits\n", (unsigned long) sizeof (UINT8) * 8);
-  printf ("\tsizeof (UINT16) = %lu bits\n", (unsigned long) sizeof (UINT16) * 8);
-  printf ("\tsizeof (UINT32) = %lu bits\n", (unsigned long) sizeof (UINT32) * 8);
-  printf ("\tsizeof (ADDR8) = %lu bits\n", (unsigned long) sizeof (ADDR8) * 8);
-  printf ("\tsizeof (ADDR16) = %lu bits\n", (unsigned long) sizeof (ADDR16) * 8);
-  printf ("\tsizeof (ADDR32) = %lu bits\n", (unsigned long) sizeof (ADDR32) * 8);
-  printf ("\tsizeof (REG8) = %lu bits\n", (unsigned long) sizeof (REG8) * 8);
-  printf ("\tsizeof (REG16) = %lu bits\n", (unsigned long) sizeof (REG16) * 8);
-  printf ("\tsizeof (REG32) = %lu bits\n", (unsigned long) sizeof (REG32) * 8);
-
-  printf ("\tTRUE = %d\n", TRUE);
-  printf ("\tFALSE = %d\n", FALSE);
-
-  printf ("Test types END\n");
-
-  printf ("Test Color START\n");
-
-  color = color_new (0x11, 0x22, 0x33);
-
-  printf ("\tColor->red = %02x\n", color_get_red (color));
-  printf ("\tColor->green = %02x\n", color_get_green (color));
-  printf ("\tColor->blue = %02x\n", color_get_blue (color));
-
-  color_free (color);
-
-  printf ("Test Color END\n");
 
   printf ("Emulator START\n");
 
@@ -131,7 +98,7 @@ main (int argc, char **argv) {
 
     SDL_FillRect (surface, bg, white);
 
-    for (k = 0; k < 0x2FFFF; ++k) {
+    for (k = 0; k < 0x24650; ++k) {
     //for (k = 0; k < 0xBB40; ++k) {
       cycles = cpu_step ((Cpu *) cpu_gb);
       cpu_gb_update_clock ((CpuGB *) cpu_gb, cycles);
