@@ -32,7 +32,7 @@ void test_type_sizes () {
 
 /**
  * Opcode : cpu_ops_8b_add
- * void cpu_ops_8b_add (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry);
+ * void cpu_ops_8b_add (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry)
  **/
 void test_cpu_ops_8b_add () {
   printf ("test/cpu_ops_8b_add result: ");
@@ -51,7 +51,7 @@ void test_cpu_ops_8b_add () {
 
 /**
  * Opcode : cpu_ops_8b_adc
- * cpu_ops_8b_adc (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry);;
+ * cpu_ops_8b_adc (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry)
  **/
 void test_cpu_ops_8b_adc () {
   printf ("test/cpu_ops_8b_adc result: ");
@@ -63,6 +63,93 @@ void test_cpu_ops_8b_adc () {
   assert (target == 0x00 && zero && !negative && half && carry);
   cpu_ops_8b_adc (&target, 0x01, &zero, &negative, &half, &carry);
   assert (target == 0x02 && !zero && !negative && !half && !carry);
+  printf ("success\n");
+}
+
+/**
+ * Opcode : cpu_ops_8b_sub
+ * cpu_ops_8b_sub (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry)
+ **/
+void test_cpu_ops_8b_sub () {
+  printf ("test/cpu_ops_8b_sub result: ");
+  target = 0x00;
+  zero = negative = half = carry = FALSE;
+  cpu_ops_8b_sub (&target, 0x01, &zero, &negative, &half, &carry);
+  assert (target == 0xFF && !zero && negative && half && carry);
+  cpu_ops_8b_sub (&target, 0x0F, &zero, &negative, &half, &carry);
+  assert (target == 0xF0 && !zero && negative && !half && !carry);
+  cpu_ops_8b_sub (&target, 0x01, &zero, &negative, &half, &carry);
+  assert (target == 0xEF && !zero && negative && half && !carry);
+  cpu_ops_8b_sub (&target, 0xE0, &zero, &negative, &half, &carry);
+  assert (target == 0x0F && !zero && negative && !half && !carry);
+  cpu_ops_8b_sub (&target, 0x0F, &zero, &negative, &half, &carry);
+  assert (target == 0x00 && zero && negative && !half && !carry);
+  printf ("success\n");
+}
+
+/**
+ * Opcode : cpu_ops_8b_sbc
+ * cpu_ops_8b_sbc (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry)
+ **/
+void test_cpu_ops_8b_sbc () {
+  printf ("test/cpu_ops_8b_sbc result: ");
+  target = 0x00;
+  zero = negative = half = carry = FALSE;
+  cpu_ops_8b_sbc (&target, 0x01, &zero, &negative, &half, &carry);
+  assert (target == 0xFF && !zero && negative && half && carry);
+  cpu_ops_8b_sbc (&target, 0x01, &zero, &negative, &half, &carry);
+  assert (target == 0xFD && !zero && negative && !half && !carry);
+  cpu_ops_8b_sbc (&target, 0x0FE, &zero, &negative, &half, &carry);
+  assert (target == 0xFF && !zero && negative && half && carry);
+  cpu_ops_8b_sbc (&target, 0x0FE, &zero, &negative, &half, &carry);
+  assert (target == 0x00 && zero && negative && !half && !carry);
+  printf ("success\n");
+}
+
+/**
+ * Opcode : cpu_ops_8b_inc
+ * cpu_ops_8b_inc (REG8 *dest, UINT32 *negative, UINT32 *half_carry, UINT32 *zero)
+ **/
+void test_cpu_ops_8b_inc () {
+  printf ("test/cpu_ops_8b_inc result: ");
+  target = 0x00;
+  zero = negative = half = carry = FALSE;
+  cpu_ops_8b_inc (&target, &negative, &half, &zero);
+  assert (target == 0x01 && !negative && !half && !zero);
+  cpu_ops_8b_inc (&target, &negative, &half, &zero);
+  assert (target == 0x02 && !negative && !half && !zero);
+  target = 0x0E;
+  cpu_ops_8b_inc (&target, &negative, &half, &zero);
+  assert (target == 0x0F && !negative && !half && !zero);
+  cpu_ops_8b_inc (&target, &negative, &half, &zero);
+  assert (target == 0x10 && !negative && half && !zero);
+  cpu_ops_8b_inc (&target, &negative, &half, &zero);
+  assert (target == 0x11 && !negative && !half && !zero);
+  target = 0xFE;
+  cpu_ops_8b_inc (&target, &negative, &half, &zero);
+  assert (target == 0xFF && !negative && !half && !zero);
+  cpu_ops_8b_inc (&target, &negative, &half, &zero);
+  assert (target == 0x00 && !negative && half && zero);
+  printf ("success\n");
+}
+
+/**
+ * Opcode : cpu_ops_8b_dec
+ * cpu_ops_8b_dec (REG8 *dest, UINT32 *negative, UINT32 *half_carry, UINT32 *zero)
+ **/
+void test_cpu_ops_8b_dec () {
+  printf ("test/cpu_ops_8b_dec result: ");
+  target = 0x00;
+  zero = negative = half = carry = FALSE;
+  cpu_ops_8b_dec (&target, &negative, &half, &zero);
+  assert (target == 0xFF && negative && half && !zero);
+  cpu_ops_8b_dec (&target, &negative, &half, &zero);
+  assert (target == 0xFE && negative && !half && !zero);
+  target = 0x02;
+  cpu_ops_8b_dec (&target, &negative, &half, &zero);
+  assert (target == 0x01 && negative && !half && !zero);
+  cpu_ops_8b_dec (&target, &negative, &half, &zero);
+  assert (target == 0x00 && negative && !half && zero);
   printf ("success\n");
 }
 
@@ -85,6 +172,10 @@ int main () {
   test_type_sizes ();
   test_cpu_ops_8b_add ();
   test_cpu_ops_8b_adc ();
+  test_cpu_ops_8b_sub ();
+  test_cpu_ops_8b_sbc ();
+  test_cpu_ops_8b_inc ();
+  test_cpu_ops_8b_dec ();
   test_color ();
 
   return 0;

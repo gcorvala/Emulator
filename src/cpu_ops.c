@@ -20,7 +20,6 @@ void
 cpu_ops_8b_adc (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry) {
   cpu_ops_8b_add (dest, value + *carry, zero, negative, half_carry, carry);
 }
-#endif
 
 void
 cpu_ops_8b_sub (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry) {
@@ -33,7 +32,7 @@ cpu_ops_8b_sub (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *
 
 void
 cpu_ops_8b_sbc (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry) {
-  cpu_ops_8b_sub (dest, value + *carry, zero, negative, half_carry, carry);
+  cpu_ops_8b_sub (dest, (value + *carry), zero, negative, half_carry, carry);
 }
 
 void
@@ -51,6 +50,7 @@ cpu_ops_8b_dec (REG8 *dest, UINT32 *negative, UINT32 *half_carry, UINT32 *zero) 
   *zero = (*dest == 0x01) ? TRUE : FALSE;
   (*dest)--;
 }
+#endif
 
 void
 cpu_ops_8b_and (REG8 *dest, BYTE value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry) {
