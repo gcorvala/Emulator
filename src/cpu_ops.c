@@ -6,6 +6,7 @@ cpu_ops_8b_ld (REG8 *dest, BYTE data) {
   *dest = data;
 }
 
+#ifndef CPU_OPS_MACRO
 void
 cpu_ops_8b_add (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry) {
   *zero = (((*dest + value) & 0xFF) == 0x00) ? TRUE : FALSE;
@@ -19,6 +20,7 @@ void
 cpu_ops_8b_adc (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry) {
   cpu_ops_8b_add (dest, value + *carry, zero, negative, half_carry, carry);
 }
+#endif
 
 void
 cpu_ops_8b_sub (REG8 *dest, REG8 value, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry) {
