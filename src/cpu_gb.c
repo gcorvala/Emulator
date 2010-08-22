@@ -1174,13 +1174,13 @@ cpu_gb_step (Cpu *cpu_parent) {
       break;
     /* ========== RLA ========== */
     case 0x0F:
-      assembly = "RRCA";
-      cpu_ops_8b_rrc (&(cpu->AF.r_8.h), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      assembly = "ROL A";
+      cpu_ops_8b_rol (&(cpu->AF.r_8.h), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x17:
-      assembly = "RLA";
-      cpu_ops_8b_rol (&(cpu->AF.r_8.h), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      assembly = "RLC A";
+      cpu_ops_8b_rlc (&(cpu->AF.r_8.h), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
       cpu_gb_update (cpu, 4, 1);
       break;
       
@@ -1189,8 +1189,8 @@ cpu_gb_step (Cpu *cpu_parent) {
       opcode = (opcode << 8) | map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1);
       switch (opcode & 0xFF) {
         case 0x11:
-          assembly = "RL C";
-          cpu_ops_8b_rol (&(cpu->BC.r_8.l), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+          assembly = "RLC C";
+          cpu_ops_8b_rlc (&(cpu->BC.r_8.l), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
           cpu_gb_update (cpu, 8, 2);
           break;
       /* ========== SWAP ========== */

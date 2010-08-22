@@ -80,7 +80,7 @@ cpu_ops_8b_xor (REG8 *dest, BYTE value, UINT32 *zero, UINT32 *negative, UINT32 *
 }
 
 void
-cpu_ops_8b_bit (REG8 *dest, unsigned short int bit, UINT32 *zero, UINT32 *negative, UINT32 *half_carry) {
+cpu_ops_8b_bit (REG8 *dest, UINT16 bit, UINT32 *zero, UINT32 *negative, UINT32 *half_carry) {
   UINT8 mask = 0x01 << bit;
   *zero = (*dest & mask) == 0 ? TRUE : FALSE;
   *negative = FALSE;
@@ -89,16 +89,6 @@ cpu_ops_8b_bit (REG8 *dest, unsigned short int bit, UINT32 *zero, UINT32 *negati
 
 void
 cpu_ops_8b_rol (REG8 *target, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry) {
-  BOOL c = *carry;
-  *carry = *target >> 7;
-  *target = (*target << 1) | c;
-  *zero = (*target == 0) ? TRUE : FALSE;
-  *negative = FALSE;
-  *half_carry = FALSE;
-}
-
-void
-cpu_ops_8b_rlc (REG8 *target, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry) {
   *carry = *target >> 7;
   *target = (*target << 1) | *carry;
   *zero = (*target == 0) ? TRUE : FALSE;
@@ -107,10 +97,19 @@ cpu_ops_8b_rlc (REG8 *target, UINT32 *zero, UINT32 *negative, UINT32 *half_carry
 }
 
 void
+cpu_ops_8b_rlc (REG8 *target, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry) {
+  UINT32 c = *carry;
+  *carry = *target >> 7;
+  *target = (*target << 1) | c;
+  *zero = (*target == 0) ? TRUE : FALSE;
+  *negative = FALSE;
+  *half_carry = FALSE;
+}
+
+void
 cpu_ops_8b_ror (REG8 *target, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry) {
-  BOOL c = *carry;
   *carry = *target & 0x01;
-  *target = (*target >> 1) | (c << 7);
+  *target = (*target >> 1) | (*carry << 7);
   *zero = (*target == 0) ? TRUE : FALSE;
   *negative = FALSE;
   *half_carry = FALSE;
@@ -118,8 +117,9 @@ cpu_ops_8b_ror (REG8 *target, UINT32 *zero, UINT32 *negative, UINT32 *half_carry
 
 void
 cpu_ops_8b_rrc (REG8 *target, UINT32 *zero, UINT32 *negative, UINT32 *half_carry, UINT32 *carry) {
+  BOOL c = *carry;
   *carry = *target & 0x01;
-  *target = (*target >> 1) | (*carry << 7);
+  *target = (*target >> 1) | (c << 7);
   *zero = (*target == 0) ? TRUE : FALSE;
   *negative = FALSE;
   *half_carry = FALSE;
