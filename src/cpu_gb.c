@@ -10,14 +10,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-typedef struct {
-  //unsigned int : 4;
-  unsigned int negative_flag;
-  unsigned int half_carry_flag;
-  unsigned int carry_flag;
-  unsigned int zero_flag;
-} CpuGBFlags;
-
 struct _CpuGB {
   Cpu cpu;
 
@@ -51,8 +43,8 @@ cpu_gb_new  (void) {
 
   cpu = calloc (sizeof (CpuGB), 1);
 
-  //cpu->flags = (CpuGBFlags *) &cpu->AF.r_8.l;
-  cpu->flags = calloc (sizeof (CpuGBFlags), 1);
+  cpu->flags = (CpuGBFlags *) &cpu->AF.r_8.l;
+  //cpu->flags = calloc (sizeof (CpuGBFlags), 1);
 
   rom_fd = open ("../data/DMG_ROM.bin", O_RDONLY);
 
@@ -140,7 +132,7 @@ cpu_gb_step (Cpu *cpu_parent) {
   CpuGB *cpu = (CpuGB *) cpu_parent;
   UINT16 opcode;
   char *assembly = NULL;
-  ADDR16 addr = cpu->PC.r_16;
+  //ADDR16 addr = cpu->PC.r_16;
 
   opcode = map_gb_get_memory (cpu->map, cpu->PC.r_16);
 
@@ -571,7 +563,8 @@ cpu_gb_step (Cpu *cpu_parent) {
     /* ========== LDD (HL), A ========== */
     case 0x32:
       assembly = "LDD (HL), A";
-      map_gb_set_memory (cpu->map, cpu->HL.r_16--, cpu->AF.r_8.h);
+      map_gb_set_memory (cpu->map, cpu->HL.r_16, cpu->AF.r_8.h);
+      cpu_ops_16b_dec (&(cpu->HL));
       cpu_gb_update (cpu, 8, 1);
       break;
     /* ========== LDI A, (HL) ========== */
@@ -584,7 +577,8 @@ cpu_gb_step (Cpu *cpu_parent) {
     /* ========== LDI (HL), A ========== */
     case 0x22:
       assembly = "LDI (HL), A";
-      map_gb_set_memory (cpu->map, cpu->HL.r_16++, cpu->AF.r_8.h);
+      map_gb_set_memory (cpu->map, cpu->HL.r_16, cpu->AF.r_8.h);
+      cpu_ops_16b_inc (&(cpu->HL));
       cpu_gb_update (cpu, 8, 1);
       break;
     /* ========== LDH (n), A ========== */
@@ -658,164 +652,164 @@ cpu_gb_step (Cpu *cpu_parent) {
     /* ========== ADD ========== */
     case 0x09:
       assembly = "ADD HL, BC";
-      cpu_ops_16b_add (&(cpu->HL), cpu->BC.r_16, &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_16b_add (&(cpu->HL), cpu->BC.r_16, cpu->flags);
       cpu_gb_update (cpu, 8, 1);
       break;
     case 0x19:
       assembly = "ADD HL, DE";
-      cpu_ops_16b_add (&(cpu->HL), cpu->DE.r_16, &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_16b_add (&(cpu->HL), cpu->DE.r_16, cpu->flags);
       cpu_gb_update (cpu, 8, 1);
       break;
     case 0x29:
       assembly = "ADD HL, HL";
-      cpu_ops_16b_add (&(cpu->HL), cpu->HL.r_16, &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_16b_add (&(cpu->HL), cpu->HL.r_16, cpu->flags);
       cpu_gb_update (cpu, 8, 1);
       break;
     case 0x39:
       assembly = "ADD HL, SP";
-      cpu_ops_16b_add (&(cpu->HL), cpu->SP.r_16, &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_16b_add (&(cpu->HL), cpu->SP.r_16, cpu->flags);
       cpu_gb_update (cpu, 8, 1);
       break;
     case 0xC6:
       assembly = "ADD #";
-      cpu_ops_8b_add (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_add (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->flags);
       cpu_gb_update (cpu, 8, 2);
       break;
     case 0x80:
       assembly = "ADD B";
-      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->BC.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->BC.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x81:
       assembly = "ADD C";
-      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->BC.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->BC.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x82:
       assembly = "ADD D";
-      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->DE.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->DE.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x83:
       assembly = "ADD E";
-      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->DE.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->DE.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x84:
       assembly = "ADD H";
-      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->HL.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->HL.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x85:
       assembly = "ADD L";
-      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->HL.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->HL.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x86:
       assembly = "ADD (HL)";
-      cpu_ops_8b_add (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_add (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), cpu->flags);
       cpu_gb_update (cpu, 8, 1);
       break;
     case 0x87:
       assembly = "ADD A";
-      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->AF.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_add (&(cpu->AF.r_8.h), cpu->AF.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xE8:
       assembly = "ADD SP, #";
-      cpu_ops_16b_add (&(cpu->SP), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_16b_add (&(cpu->SP), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->flags);
       cpu_gb_update (cpu, 16, 2);
       break;
     /* ========== ADC ========== */
     case 0xCE:
       assembly = "ADC #";
-      cpu_ops_8b_adc (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_adc (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->flags);
       cpu_gb_update (cpu, 8, 2);
       break;
     case 0x88:
       assembly = "ADC B";
-      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->BC.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->BC.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x89:
       assembly = "ADC C";
-      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->BC.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->BC.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x8A:
       assembly = "ADC D";
-      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->DE.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->DE.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x8B:
       assembly = "ADC E";
-      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->DE.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->DE.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x8C:
       assembly = "ADC H";
-      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->HL.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->HL.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x8D:
       assembly = "ADC L";
-      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->HL.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->HL.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x8E:
       assembly = "ADC (HL)";
-      cpu_ops_8b_adc (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_adc (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), cpu->flags);
       cpu_gb_update (cpu, 8, 1);
       break;
     case 0x8F:
       assembly = "ADC A";
-      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->AF.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_adc (&(cpu->AF.r_8.h), cpu->AF.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     /* ========== SUB ========== */
     case 0xD6:
       assembly = "SUB #";
-      cpu_ops_8b_sub (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sub (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->flags);
       cpu_gb_update (cpu, 8, 2);
       break;
     case 0x90:
       assembly = "SUB B";
-      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->BC.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->BC.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x91:
       assembly = "SUB C";
-      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->BC.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->BC.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x92:
       assembly = "SUB D";
-      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->DE.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->DE.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x93:
       assembly = "SUB E";
-      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->DE.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->DE.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x94:
       assembly = "SUB H";
-      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->HL.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->HL.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x95:
       assembly = "SUB L";
-      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->HL.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->HL.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x96:
       assembly = "SUB (HL)";
-      cpu_ops_8b_sub (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sub (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), cpu->flags);
       cpu_gb_update (cpu, 8, 1);
       break;
     case 0x97:
       assembly = "SUB A";
-      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->AF.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sub (&(cpu->AF.r_8.h), cpu->AF.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     /* ========== SBC ========== */
@@ -826,257 +820,257 @@ cpu_gb_step (Cpu *cpu_parent) {
       break;*/
     case 0x98:
       assembly = "SBC B";
-      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->BC.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->BC.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x99:
       assembly = "SBC C";
-      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->BC.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->BC.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x9A:
       assembly = "SBC D";
-      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->DE.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->DE.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x9B:
       assembly = "SBC E";
-      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->DE.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->DE.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x9C:
       assembly = "SBC H";
-      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->HL.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->HL.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x9D:
       assembly = "SBC L";
-      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->HL.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->HL.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x9E:
       assembly = "SBC (HL)";
-      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), cpu->flags);
       cpu_gb_update (cpu, 8, 1);
       break;
     case 0x9F:
       assembly = "SBC A";
-      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->AF.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_sbc (&(cpu->AF.r_8.h), cpu->AF.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     /* ========== AND ========== */
     case 0xA0:
       assembly = "AND B";
-      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->BC.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->BC.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xA1:
       assembly = "AND C";
-      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->BC.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->BC.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xA2:
       assembly = "AND D";
-      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->DE.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->DE.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xA3:
       assembly = "AND E";
-      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->DE.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->DE.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xA4:
       assembly = "AND H";
-      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->HL.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->HL.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xA5:
       assembly = "AND L";
-      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->HL.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->HL.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xA6:
       assembly = "AND (HL)";
-      cpu_ops_8b_and (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_and (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), cpu->flags);
       cpu_gb_update (cpu, 8, 1);
       break;
     case 0xA7:
       assembly = "AND A";
-      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->AF.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_and (&(cpu->AF.r_8.h), cpu->AF.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xE6:
       assembly = "AND #";
-      cpu_ops_8b_and (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_and (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->flags);
       cpu_gb_update (cpu, 8, 2);
       break;
     /* ========== OR ========== */
     case 0xB0:
       assembly = "OR B";
-      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->BC.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->BC.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xB1:
       assembly = "OR C";
-      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->BC.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->BC.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xB2:
       assembly = "OR D";
-      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->DE.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->DE.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xB3:
       assembly = "OR E";
-      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->DE.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->DE.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xB4:
       assembly = "OR H";
-      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->HL.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->HL.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xB5:
       assembly = "OR L";
-      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->HL.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->HL.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xB6:
       assembly = "OR (HL)";
-      cpu_ops_8b_or (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_or (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), cpu->flags);
       cpu_gb_update (cpu, 8, 1);
       break;
     case 0xB7:
       assembly = "OR A";
-      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->AF.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_or (&(cpu->AF.r_8.h), cpu->AF.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xF6:
       assembly = "OR #";
-      cpu_ops_8b_or (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_or (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->flags);
       cpu_gb_update (cpu, 8, 2);
       break;
     /* ========== XOR ========== */
     case 0xA8:
       assembly = "XOR B";
-      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->BC.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->BC.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xA9:
       assembly = "XOR C";
-      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->BC.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->BC.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xAA:
       assembly = "XOR D";
-      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->DE.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->DE.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xAB:
       assembly = "XOR E";
-      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->DE.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->DE.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xAC:
       assembly = "XOR H";
-      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->HL.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->HL.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xAD:
       assembly = "XOR L";
-      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->HL.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->HL.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xAE:
       assembly = "XOR (HL)";
-      cpu_ops_8b_xor (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_xor (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->HL.r_16), cpu->flags);
       cpu_gb_update (cpu, 8, 1);
       break;
     case 0xAF:
       assembly = "XOR A";
-      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->AF.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_xor (&(cpu->AF.r_8.h), cpu->AF.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xEE:
       assembly = "XOR #";
-      cpu_ops_8b_xor (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_xor (&(cpu->AF.r_8.h), map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->flags);
       cpu_gb_update (cpu, 8, 2);
       break;
     /* ========== CP ========== */
     case 0xB8:
       assembly = "CP B";
-      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->BC.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->BC.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xB9:
       assembly = "CP C";
-      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->BC.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->BC.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xBA:
       assembly = "CP D";
-      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->DE.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->DE.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xBB:
       assembly = "CP E";
-      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->DE.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->DE.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xBC:
       assembly = "CP H";
-      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->HL.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->HL.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xBD:
       assembly = "CP L";
-      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->HL.r_8.l, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->HL.r_8.l, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xBE:
       assembly = "CP (HL)";
-      cpu_ops_8b_cmp (cpu->AF.r_8.h, map_gb_get_memory (cpu->map, cpu->HL.r_16), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_cmp (cpu->AF.r_8.h, map_gb_get_memory (cpu->map, cpu->HL.r_16), cpu->flags);
       cpu_gb_update (cpu, 8, 1);
       break;
     case 0xBF:
       assembly = "CP A";
-      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->AF.r_8.h, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_cmp (cpu->AF.r_8.h, cpu->AF.r_8.h, cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0xFE:
       assembly = "CP #";
-      cpu_ops_8b_cmp (cpu->AF.r_8.h, map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_cmp (cpu->AF.r_8.h, map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1), cpu->flags);
       cpu_gb_update (cpu, 8, 2);
       break;
     /* ========== INC # ========== */
     case 0x04:
       assembly = "INC B";
-      cpu_ops_8b_inc (&(cpu->BC.r_8.h), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_inc (&(cpu->BC.r_8.h), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x0C:
       assembly = "INC C";
-      cpu_ops_8b_inc (&(cpu->BC.r_8.l), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_inc (&(cpu->BC.r_8.l), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x14:
       assembly = "INC D";
-      cpu_ops_8b_inc (&(cpu->DE.r_8.h), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_inc (&(cpu->DE.r_8.h), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x1C:
       assembly = "INC E";
-      cpu_ops_8b_inc (&(cpu->DE.r_8.l), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_inc (&(cpu->DE.r_8.l), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x24:
       assembly = "INC H";
-      cpu_ops_8b_inc (&(cpu->HL.r_8.h), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_inc (&(cpu->HL.r_8.h), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x2C:
       assembly = "INC L";
-      cpu_ops_8b_inc (&(cpu->HL.r_8.l), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_inc (&(cpu->HL.r_8.l), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x34:
@@ -1086,7 +1080,7 @@ cpu_gb_step (Cpu *cpu_parent) {
       break;
     case 0x3C:
       assembly = "INC A";
-      cpu_ops_8b_inc (&(cpu->AF.r_8.h), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_inc (&(cpu->AF.r_8.h), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     /* ========== INC ## ========== */
@@ -1113,42 +1107,42 @@ cpu_gb_step (Cpu *cpu_parent) {
     /* ========== DEC # ========== */
     case 0x05:
       assembly = "DEC B";
-      cpu_ops_8b_dec (&(cpu->BC.r_8.h), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_dec (&(cpu->BC.r_8.h), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x0D:
       assembly = "DEC C";
-      cpu_ops_8b_dec (&(cpu->BC.r_8.l), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_dec (&(cpu->BC.r_8.l), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x15:
       assembly = "DEC D";
-      cpu_ops_8b_dec (&(cpu->DE.r_8.h), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_dec (&(cpu->DE.r_8.h), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x1D:
       assembly = "DEC E";
-      cpu_ops_8b_dec (&(cpu->DE.r_8.l), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_dec (&(cpu->DE.r_8.l), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x25:
       assembly = "DEC H";
-      cpu_ops_8b_dec (&(cpu->HL.r_8.h), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_dec (&(cpu->HL.r_8.h), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x2D:
       assembly = "DEC L";
-      cpu_ops_8b_dec (&(cpu->HL.r_8.l), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_dec (&(cpu->HL.r_8.l), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x35:
       assembly = "DEC (HL)";
-      map_gb_set_memory (cpu->map, cpu->HL.r_16, map_gb_get_memory (cpu->map, cpu->HL.r_16));
+      map_gb_set_memory (cpu->map, cpu->HL.r_16, map_gb_get_memory (cpu->map, cpu->HL.r_16) - 1);
       cpu_gb_update (cpu, 12, 1);
       break;
     case 0x3D:
       assembly = "DEC A";
-      cpu_ops_8b_dec (&(cpu->AF.r_8.h), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->zero_flag));
+      cpu_ops_8b_dec (&(cpu->AF.r_8.h), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     /* ========== DEC ## ========== */
@@ -1175,12 +1169,12 @@ cpu_gb_step (Cpu *cpu_parent) {
     /* ========== RLA ========== */
     case 0x0F:
       assembly = "ROL A";
-      cpu_ops_8b_rol (&(cpu->AF.r_8.h), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_rol (&(cpu->AF.r_8.h), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     case 0x17:
       assembly = "RLC A";
-      cpu_ops_8b_rlc (&(cpu->AF.r_8.h), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+      cpu_ops_8b_rlc (&(cpu->AF.r_8.h), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
       
@@ -1190,38 +1184,38 @@ cpu_gb_step (Cpu *cpu_parent) {
       switch (opcode & 0xFF) {
         case 0x11:
           assembly = "RLC C";
-          cpu_ops_8b_rlc (&(cpu->BC.r_8.l), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+          cpu_ops_8b_rlc (&(cpu->BC.r_8.l), cpu->flags);
           cpu_gb_update (cpu, 8, 2);
           break;
       /* ========== SWAP ========== */
         case 0x30:
           assembly = "SWAP B";
-          cpu_ops_8b_swap (&(cpu->BC.r_8.h), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+          cpu_ops_8b_swap (&(cpu->BC.r_8.h), cpu->flags);
           cpu_gb_update (cpu, 8, 2);
           break;
         case 0x31:
           assembly = "SWAP C";
-          cpu_ops_8b_swap (&(cpu->BC.r_8.l), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+          cpu_ops_8b_swap (&(cpu->BC.r_8.l), cpu->flags);
           cpu_gb_update (cpu, 8, 2);
           break;
         case 0x32:
           assembly = "SWAP D";
-          cpu_ops_8b_swap (&(cpu->DE.r_8.h), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+          cpu_ops_8b_swap (&(cpu->DE.r_8.h), cpu->flags);
           cpu_gb_update (cpu, 8, 2);
           break;
         case 0x33:
           assembly = "SWAP E";
-          cpu_ops_8b_swap (&(cpu->DE.r_8.l), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+          cpu_ops_8b_swap (&(cpu->DE.r_8.l), cpu->flags);
           cpu_gb_update (cpu, 8, 2);
           break;
         case 0x34:
           assembly = "SWAP H";
-          cpu_ops_8b_swap (&(cpu->HL.r_8.h), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+          cpu_ops_8b_swap (&(cpu->HL.r_8.h), cpu->flags);
           cpu_gb_update (cpu, 8, 2);
           break;
         case 0x35:
           assembly = "SWAP L";
-          cpu_ops_8b_swap (&(cpu->HL.r_8.l), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+          cpu_ops_8b_swap (&(cpu->HL.r_8.l), cpu->flags);
           cpu_gb_update (cpu, 8, 2);
           break;
         /*case 0x36:
@@ -1231,13 +1225,13 @@ cpu_gb_step (Cpu *cpu_parent) {
           break;*/
         case 0x37:
           assembly = "SWAP A";
-          cpu_ops_8b_swap (&(cpu->AF.r_8.h), &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag), &(cpu->flags->carry_flag));
+          cpu_ops_8b_swap (&(cpu->AF.r_8.h), cpu->flags);
           cpu_gb_update (cpu, 8, 2);
           break;
       /* ========== BIT ========== */
         case 0x7C:
           assembly = "BIT 7, H";
-          cpu_ops_8b_bit (&(cpu->HL.r_8.h), 7, &(cpu->flags->zero_flag), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag));
+          cpu_ops_8b_bit (&(cpu->HL.r_8.h), 7, cpu->flags);
           cpu_gb_update (cpu, 8, 2);
           break;
         case 0x87:
@@ -1339,7 +1333,7 @@ cpu_gb_step (Cpu *cpu_parent) {
       map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.h);
       map_gb_set_memory (cpu->map, cpu->SP.r_16--, tmp.r_8.l);
       cpu->PC.r_16 = map_gb_get_memory (cpu->map, cpu->PC.r_16 + 1) | (map_gb_get_memory (cpu->map, cpu->PC.r_16 + 2) << 8);
-      cpu->cycles = 12;
+      cpu_gb_update (cpu, 12, 0);
       break;
     /* ========== CALL cc, ## ========== */
     case 0xC4:
@@ -1491,7 +1485,7 @@ cpu_gb_step (Cpu *cpu_parent) {
     /* ========== CPL ========== */
     case 0x2F:
       assembly = "CPL";
-      cpu_ops_8b_cpl (&(cpu->AF.r_8.h), &(cpu->flags->negative_flag), &(cpu->flags->half_carry_flag));
+      cpu_ops_8b_cpl (&(cpu->AF.r_8.h), cpu->flags);
       cpu_gb_update (cpu, 4, 1);
       break;
     /* ========== HALT ========== */
@@ -1506,7 +1500,7 @@ cpu_gb_step (Cpu *cpu_parent) {
       break;
   }
 
-  printf_asm (addr, opcode, assembly, "AF = %04x | BC = %04x | DE = %04x | HL = %04x | SP = %04x | Z = %u | N = %u| H = %u | C = %u", cpu->AF.r_16, cpu->BC.r_16, cpu->DE.r_16, cpu->HL.r_16, cpu->SP.r_16, cpu->flags->zero_flag, cpu->flags->negative_flag, cpu->flags->half_carry_flag, cpu->flags->carry_flag);
+  //printf_asm (addr, opcode, assembly, "AF = %04x | BC = %04x | DE = %04x | HL = %04x | SP = %04x | Z = %u | N = %u| H = %u | C = %u", cpu->AF.r_16, cpu->BC.r_16, cpu->DE.r_16, cpu->HL.r_16, cpu->SP.r_16, cpu->flags->zero_flag, cpu->flags->negative_flag, cpu->flags->half_carry_flag, cpu->flags->carry_flag);
 
   return cpu->cycles;
 }
@@ -1567,6 +1561,7 @@ cpu_gb_update_clock (CpuGB *cpu, UINT32 cycles) {
     tima = map_gb_get_memory (cpu->map, 0xFF05);
     tma = map_gb_get_memory (cpu->map, 0xFF06);
     if (tima == 0xFF) {
+      printf ("aie\n");
       map_gb_set_memory (cpu->map, 0xFF05, tma);
       map_gb_set_memory (cpu->map, 0xFF0F, 0x04);
     }

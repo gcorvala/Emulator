@@ -8,6 +8,13 @@ typedef struct _MapGB        MapGB;
 typedef struct _RomGB        RomGB;
 typedef struct _SpriteGB     SpriteGB;
 typedef struct _TileGB       TileGB;
+typedef struct {
+  //unsigned int : 4;
+  unsigned int negative_flag : 1;
+  unsigned int half_carry_flag : 1;
+  unsigned int carry_flag : 1;
+  unsigned int zero_flag : 1;
+} CpuGBFlags;
 
 typedef struct _Color     Color;
 
